@@ -4,36 +4,42 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server, WebSocket } from 'ws';
+import { IncomingMessage } from 'http';
 
 @WebSocketGateway({
-  cors: { origin: true, credentials: true },
-  namespace: '/stream',
+  path: '/ws/stream',
 })
 export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
-  handleConnection(client: Socket) {
-    // Logs so you'll see something immediately
-    // eslint-disable-next-line no-console
-    console.log(`[WS] client connected: ${client.id}`);
+  handleConnection(client: WebSocket, req: IncomingMessage) {
+    const ip =
+      (req.headers['x-forwarded-for'] as string) ||
+      req.socket.remoteAddress ||
+      'unknown';
+
+    console.log(`[WS] Client connected. ip=${ip}`);
+
+    client.on('message', (data) => {
+      const text = data.toString();
+      console.log(`[WS] Received message: ${text}`);
+    });
+
+    client.on('error', (err) => {
+      console.log(`[WS] Client error: ${err.message}`);
+    });
   }
 
-  handleDisconnect(client: Socket) {
-    // eslint-disable-next-line no-console
-    console.log(`[WS] client disconnected: ${client.id}`);
+  handleDisconnect() {
+    console.log(`[WS] Client disconnected`);
   }
 
-  emitFrame(payload: any) {
-    this.server.emit('frame', payload);
-  }
-
-  emitTracker(payload: any) {
-    this.server.emit('tracker', payload);
-  }
-
-  emitFlorence(payload: any) {
-    this.server.emit('florence', payload);
+  broadcast(obj: unknown) {
+    const msg = JSON.stringify(obj);
+    this.server.clients.forEach((c) => {
+      if (c.readyState === WebSocket.OPEN) c.send(msg);
+    });
   }
 }
