@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HealthModule } from './modules/health/health.module';
 import { PromptsModule } from './modules/prompts/prompts.module';
 import configuration from './common/config/configuration';
-import { RealtimeModule } from './modules/realtime/realtime.module';
+import { StreamModule } from './modules/stream/stream.module';
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { RealtimeModule } from './modules/realtime/realtime.module';
     }),
     HealthModule,
     PromptsModule,
-    RealtimeModule,
+    StreamModule,
   ],
 })
 export class AppModule {}
