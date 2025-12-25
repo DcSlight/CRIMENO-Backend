@@ -3,43 +3,59 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server, WebSocket } from 'ws';
-import { IncomingMessage } from 'http';
+import { Logger } from '@nestjs/common';
+import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({
-  path: '/ws/stream',
+  cors: { origin: true, credentials: true },
+  namespace: '/stream',
 })
 export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server!: Server;
 
-  handleConnection(client: WebSocket, req: IncomingMessage) {
-    const ip =
-      (req.headers['x-forwarded-for'] as string) ||
-      req.socket.remoteAddress ||
-      'unknown';
+  private readonly logger = new Logger('StreamGateway');
 
-    console.log(`[WS] Client connected. ip=${ip}`);
-
-    client.on('message', (data) => {
-      const text = data.toString();
-      console.log(`[WS] Received message: ${text}`);
-    });
-
-    client.on('error', (err) => {
-      console.log(`[WS] Client error: ${err.message}`);
-    });
+  handleConnection(client: Socket) {
+    this.logger.log(`Client connected: id=${client.id} ip=${client.handshake.address}`);
   }
 
-  handleDisconnect() {
-    console.log(`[WS] Client disconnected`);
+  handleDisconnect(client: Socket) {
+    this.logger.log(`Client disconnected: id=${client.id}`);
   }
 
-  broadcast(obj: unknown) {
-    const msg = JSON.stringify(obj);
-    this.server.clients.forEach((c) => {
-      if (c.readyState === WebSocket.OPEN) c.send(msg);
-    });
+  // Python -> NestJS : tracker event
+  @SubscribeMessage('tracker')
+  onTracker(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: any,
+  ) {
+    this.logger.log(
+      `[IN tracker] from=${client.id} keys=${payload ? Object.keys(payload).join(',') : 'null'}`,
+    );
+    // אם בא לך לראות חלק מהתוכן:
+    // this.logger.debug(JSON.stringify(payload).slice(0, 500));
+
+    // אופציונלי: לשדר לכולם (React)
+    this.server.emit('tracker', payload);
+  }
+
+  // Python -> NestJS : florence event
+  @SubscribeMessage('florence')
+  onFlorence(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: any,
+  ) {
+    this.logger.log(`[IN florence] from=${client.id}`);
+    this.server.emit('florence', payload);
+  }
+
+  // (אם עדיין אתה רוצה NestJS -> React)
+  emitFrame(payload: any) {
+    this.server.emit('frame', payload);
   }
 }
