@@ -1,73 +1,65 @@
-import { Logger } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
-} from '@nestjs/websockets';
-import { IncomingMessage } from 'http';
-import { WebSocketServer as WSServer, WebSocket } from 'ws';
+} from "@nestjs/websockets";
+import { Logger } from "@nestjs/common";
+import { Server, WebSocket } from "ws";
+
+type AnyJson = Record<string, any>;
 
 @WebSocketGateway({
-  path: '/ws/tracker',
+  path: "/ws/tracker",
   cors: { origin: true, credentials: true },
 })
 export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(StreamGateway.name);
 
   @WebSocketServer()
-  server!: WSServer;
+  server!: Server;
 
-  handleConnection(client: WebSocket, req: IncomingMessage) {
-    const ip =
-      (req.headers['x-forwarded-for'] as string) ||
-      req.socket.remoteAddress ||
-      'unknown';
+  handleConnection(client: WebSocket) {
+    this.logger.log("✅ client connected");
+  }
 
-    this.logger.log(`✅ client connected ip=${ip} url=${req.url}`);
+  handleDisconnect(client: WebSocket) {
+    this.logger.log("❌ client disconnected");
+  }
 
-    // בדיוק כמו ws_test_server: להדפיס כל msg שנכנס (snippet)
-    client.on('message', (data) => {
-      const msg = data.toString();
-      this.logger.log(`📦 got message: ${msg.slice(0, 160)}`);
+  // NOTE:
+  // With WsAdapter + ws, we listen to messages on the server.
+  // Nest will call this gateway, but we still need to wire message handling.
+  afterInit(server: Server) {
+    server.on("connection", (ws: WebSocket) => {
+      ws.on("message", (raw) => {
+        const msg = raw.toString();
+        this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
 
-      // אינדיקציה “קיבלתי פריימים + BBOX”
-      try {
-        const payload = JSON.parse(msg);
-        const frameIndex = payload?.frame_index;
-        const t = payload?.video_time_ms;
-        const tracksCount = Array.isArray(payload?.tracks)
-          ? payload.tracks.length
-          : 0;
-        const hasOverlay = typeof payload?.overlay_jpg_b64 === 'string';
+        let payload: AnyJson | null = null;
+        try {
+          payload = JSON.parse(msg);
+        } catch {
+          // ignore non-json
+        }
 
-        this.logger.log(
-          `🎞️ frame=${frameIndex} t=${t}ms tracks=${tracksCount} overlay=${hasOverlay}`,
-        );
-      } catch (e) {
-        this.logger.warn(`⚠️ message is not valid JSON`);
-      }
+        if (payload?.type === "tracker_frame") {
+          const frame = payload.frame_index;
+          const t = payload.video_time_ms;
+          const tracks = Array.isArray(payload.tracks) ? payload.tracks.length : 0;
+          const overlay = !!payload.overlay_jpg_b64;
+          this.logger.log(
+            `⚡ frame=${frame} t=${t}ms tracks=${tracks} overlay=${overlay}`,
+          );
+        }
 
-      // ברודקאסט לכל ה־clients (כולל React בהמשך)
-      this.broadcastRaw(msg);
-
-      // ACK קטן כדי שתדע שהשרת קיבל (אופציונלי, עוזר לדיבוג)
-      try {
-        client.send(JSON.stringify({ type: 'ack', ok: true }));
-      } catch {}
+        // Relay to ALL connected clients (React included)
+        for (const client of server.clients) {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(msg);
+          }
+        }
+      });
     });
-  }
-
-  handleDisconnect() {
-    this.logger.log(`❌ client disconnected`);
-  }
-
-  private broadcastRaw(raw: string) {
-    // משדר לכולם. בהמשך React פשוט יתחבר לפה ויקבל את אותו JSON.
-    for (const c of this.server.clients) {
-      if (c.readyState === WebSocket.OPEN) {
-        c.send(raw);
-      }
-    }
   }
 }
