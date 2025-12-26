@@ -8,6 +8,8 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.useWebSocketAdapter(new WsAdapter(app)); 
+
   app.use(helmet());
   app.enableCors({ origin: true, credentials: true });
 
@@ -15,18 +17,13 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      forbidNonWhitelisted: false,
+      forbidNonWhitelisted: true,
     }),
   );
 
-  // חשוב כדי לעבוד עם WebSocket "רגיל" (ws) ולא socket.io
-  app.useWebSocketAdapter(new WsAdapter(app));
-
-  app.setGlobalPrefix('api');
-
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('Crime Activity API')
-    .setDescription('Backend for model <-> client communication')
+    .setTitle('API')
+    .setDescription('API Docs')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();
@@ -36,8 +33,9 @@ async function bootstrap() {
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   await app.listen(port);
+
   console.log(`[HTTP] Listening on http://localhost:${port}`);
-  console.log(`[WS] Listening on ws://localhost:${port}/ws/stream`);
+  console.log(`[WS]   Listening on ws://localhost:${port}/ws/tracker`);
 }
 
 bootstrap();
