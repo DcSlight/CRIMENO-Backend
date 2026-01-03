@@ -4,6 +4,7 @@ import { HealthModule } from './modules/health/health.module';
 import { PromptsModule } from './modules/prompts/prompts.module';
 import configuration from './common/config/configuration';
 import { StreamModule } from './modules/stream/stream.module';
+import { VideosModule } from './modules/videos/videos.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { StreamModule } from './modules/stream/stream.module';
     HealthModule,
     PromptsModule,
     StreamModule,
+    VideosModule,
   ],
 })
 export class AppModule {}
