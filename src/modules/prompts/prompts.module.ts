@@ -1,9 +1,7 @@
-import { Module } from '@nestjs/common';
-import { PromptsController } from './prompts.controller';
-import { PromptsService } from './prompts.service';
+import { Module } from "@nestjs/common";
+import { PromptsGateway } from "./prompts.gateway";
 
 @Module({
-  controllers: [PromptsController],
-  providers: [PromptsService],
+  providers: [PromptsGateway],
 })
 export class PromptsModule {}

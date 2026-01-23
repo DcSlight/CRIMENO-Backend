@@ -10,11 +10,11 @@ import { Server, WebSocket } from "ws";
 type AnyJson = Record<string, any>;
 
 @WebSocketGateway({
-  path: "/ws/tracker",
+  path: "/ws/prompts",
   cors: { origin: true, credentials: true },
 })
-export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  private readonly logger = new Logger(StreamGateway.name);
+export class PromptsGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(PromptsGateway.name);
 
   @WebSocketServer()
   server!: Server;
@@ -27,14 +27,10 @@ export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log("❌ client disconnected");
   }
 
-  // NOTE:
-  // With WsAdapter + ws, we listen to messages on the server.
-  // Nest will call this gateway, but we still need to wire message handling.
   afterInit(server: Server) {
     server.on("connection", (ws: WebSocket) => {
       ws.on("message", (raw) => {
         const msg = raw.toString();
-        this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
 
         let payload: AnyJson | null = null;
         try {
@@ -43,14 +39,14 @@ export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
           // ignore non-json
         }
 
-        if (payload?.type === "tracker_frame") {
+        if (payload?.type === "florence_frame") {
           const frame = payload.frame_index;
           const t = payload.video_time_ms;
-          const tracks = Array.isArray(payload.tracks) ? payload.tracks.length : 0;
-          const overlay = !!payload.overlay_jpg_b64;
-          this.logger.log(
-            `⚡ frame=${frame} t=${t}ms tracks=${tracks} overlay=${overlay}`,
-          );
+          const caption: string = payload?.raw?.more_detailed_caption ?? "";
+          const captionShort = caption.replace(/\s+/g, " ").slice(0, 140);
+          this.logger.log(`🧠 florence frame=${frame} t=${t}ms | ${captionShort}`);
+        } else {
+          this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
         }
 
         // Relay to ALL connected clients (React included)
