@@ -3,6 +3,7 @@ import { ConfigService } from "@nestjs/config";
 import { spawn } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import { BroadcasterService } from "../broadcaster/broadcaster.service";
 
 export type VideoOptionDto = {
   label: string;
@@ -11,10 +12,15 @@ export type VideoOptionDto = {
 
 @Injectable()
 export class VideosService {
-  constructor(private readonly config: ConfigService) {}
+  constructor(private readonly config: ConfigService ,private readonly broadcaster: BroadcasterService) {}
 
   // Allowed video extensions
   private readonly allowedExt = new Set([".mp4", ".webm", ".ogg", ".mov", ".m4v"]);
+
+
+  async selectVideo(videoPath: string) {
+    await this.broadcaster.playVideo(videoPath);
+  }
 
   // -----------------------------
   // GET /videos
