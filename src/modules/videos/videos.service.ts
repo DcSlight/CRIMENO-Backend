@@ -48,8 +48,7 @@ export class VideosService {
     if (!fs.existsSync(videoPath)) {
       throw new BadRequestException(`Video not found: ${fileName}`);
     }
-
-    // 🔥 זה כל הקסם עכשיו
+    console.log(videoPath);
     await this.broadcaster.playVideo(videoPath);
   }
 

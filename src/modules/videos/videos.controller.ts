@@ -16,6 +16,7 @@ export class VideosController {
 
   @Post("selection")
   async select(@Body() body: SelectVideoDto) {
+    console.log(body);
     await this.videosService.selectVideo(body.src);
     return { ok: true };
   }
