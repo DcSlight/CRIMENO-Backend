@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from "@nestjs/common";
 import { VideosService, VideoOptionDto } from "./videos.service";
+import { SelectVideoDto } from "./dto/select-video.dto";
 
 @Controller("videos")
 export class VideosController {
@@ -13,11 +14,8 @@ export class VideosController {
     return this.videosService.getVideoOptions();
   }
 
-  // -----------------------------
-  // POST /videos/select
-  // -----------------------------
   @Post("selection")
-  async select(@Body() body: { src: string }) {
+  async select(@Body() body: SelectVideoDto) {
     await this.videosService.selectVideo(body.src);
     return { ok: true };
   }
