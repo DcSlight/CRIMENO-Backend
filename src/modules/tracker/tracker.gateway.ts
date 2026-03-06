@@ -3,36 +3,33 @@ import {
   WebSocketServer,
   OnGatewayConnection,
   OnGatewayDisconnect,
-} from "@nestjs/websockets";
-import { Logger } from "@nestjs/common";
-import { Server, WebSocket } from "ws";
+} from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
+import { Server, WebSocket } from 'ws';
 
 type AnyJson = Record<string, any>;
 
 @WebSocketGateway({
-  path: "/ws/tracker",
+  path: '/ws/tracker',
   cors: { origin: true, credentials: true },
 })
-export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  private readonly logger = new Logger(StreamGateway.name);
+export class TrackerGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(TrackerGateway.name);
 
   @WebSocketServer()
   server!: Server;
 
   handleConnection(client: WebSocket) {
-    this.logger.log("✅ client connected");
+    this.logger.log('✅ client connected');
   }
 
   handleDisconnect(client: WebSocket) {
-    this.logger.log("❌ client disconnected");
+    this.logger.log('❌ client disconnected');
   }
 
-  // NOTE:
-  // With WsAdapter + ws, we listen to messages on the server.
-  // Nest will call this gateway, but we still need to wire message handling.
   afterInit(server: Server) {
-    server.on("connection", (ws: WebSocket) => {
-      ws.on("message", (raw) => {
+    server.on('connection', (ws: WebSocket) => {
+      ws.on('message', (raw) => {
         const msg = raw.toString();
         this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
 
@@ -43,7 +40,7 @@ export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
           // ignore non-json
         }
 
-        if (payload?.type === "tracker_frame") {
+        if (payload?.type === 'tracker_frame') {
           const frame = payload.frame_index;
           const t = payload.video_time_ms;
           const tracks = Array.isArray(payload.tracks) ? payload.tracks.length : 0;
@@ -53,7 +50,6 @@ export class StreamGateway implements OnGatewayConnection, OnGatewayDisconnect {
           );
         }
 
-        // Relay to ALL connected clients (React included)
         for (const client of server.clients) {
           if (client.readyState === WebSocket.OPEN) {
             client.send(msg);

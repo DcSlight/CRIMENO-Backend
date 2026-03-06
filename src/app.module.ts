@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { HealthModule } from './modules/health/health.module';
-import { PromptsModule } from './modules/prompts/prompts.module';
+import { FlorenceModule } from './modules/florence/florence.module';
 import configuration from './common/config/configuration';
-import { StreamModule } from './modules/stream/stream.module';
+import { TrackerModule } from './modules/tracker/tracker.module';
+import { QwenModule } from './modules/qwen/qwen.module';
 import { VideosModule } from './modules/videos/videos.module';
 
 @Module({
@@ -13,8 +14,9 @@ import { VideosModule } from './modules/videos/videos.module';
       load: [configuration],
     }),
     HealthModule,
-    PromptsModule,
-    StreamModule,
+    FlorenceModule,
+    TrackerModule,
+    QwenModule,
     VideosModule,
   ],
 })
