@@ -42,9 +42,13 @@ export class FlorenceGateway implements OnGatewayConnection, OnGatewayDisconnect
         if (payload?.type === 'florence_frame') {
           const frame = payload.frame_index;
           const t = payload.video_time_ms;
-          const caption: string = payload?.raw?.more_detailed_caption ?? '';
-          const captionShort = caption.replace(/\s+/g, ' ').slice(0, 140);
-          this.logger.log(`🧠 florence frame=${frame} t=${t}ms | ${captionShort}`);
+          const caption: string = payload?.caption ?? '';
+          const weapons = payload?.weapons_detected?.length ?? 0;
+          const objects = payload?.objects?.length ?? 0;
+          const captionShort = caption.replace(/\s+/g, ' ').slice(0, 100);
+          this.logger.log(
+            `🧠 florence frame=${frame} t=${t}ms objects=${objects} weapons=${weapons} | ${captionShort}`,
+          );
         } else {
           this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
         }

@@ -44,9 +44,9 @@ export class TrackerGateway implements OnGatewayConnection, OnGatewayDisconnect 
           const frame = payload.frame_index;
           const t = payload.video_time_ms;
           const tracks = Array.isArray(payload.tracks) ? payload.tracks.length : 0;
-          const overlay = !!payload.overlay_jpg_b64;
+          const motion = payload.motion_detected ? 'yes' : 'no';
           this.logger.log(
-            `⚡ frame=${frame} t=${t}ms tracks=${tracks} overlay=${overlay}`,
+            `⚡ tracker frame=${frame} t=${t}ms tracks=${tracks} motion=${motion}`,
           );
         }
 
