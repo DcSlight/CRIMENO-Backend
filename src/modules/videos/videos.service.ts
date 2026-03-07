@@ -27,29 +27,35 @@ export class VideosService {
   // -----------------------------
   // POST /videos/select
   // -----------------------------
-  async selectVideo(src: string) {
+  async selectVideo(src: string, videoType: "local" | "online") {
     if (!src || typeof src !== "string") {
       throw new BadRequestException("src is required");
     }
 
-    if (!src.startsWith("/videos/")) {
-      throw new BadRequestException("src must start with /videos/");
+    if (videoType === "local") {
+      if (!src.startsWith("/videos/")) {
+        throw new BadRequestException("src must start with /videos/");
+      }
+
+      const fileName = path.basename(src);
+      const ext = path.extname(fileName).toLowerCase();
+
+      if (!this.allowedExt.has(ext)) {
+        throw new BadRequestException(`Unsupported video extension: ${ext}`);
+      }
+
+      const videoPath = path.join(this.getVideosDirFromEnv(), fileName);
+
+      if (!fs.existsSync(videoPath)) {
+        throw new BadRequestException(`Video not found: ${fileName}`);
+      }
+      console.log(videoPath);
+      await this.broadcaster.playVideo(videoPath, "local");
+    } else {
+      // online video - src is a URL
+      console.log(src);
+      await this.broadcaster.playVideo(src, "online");
     }
-
-    const fileName = path.basename(src);
-    const ext = path.extname(fileName).toLowerCase();
-
-    if (!this.allowedExt.has(ext)) {
-      throw new BadRequestException(`Unsupported video extension: ${ext}`);
-    }
-
-    const videoPath = path.join(this.getVideosDirFromEnv(), fileName);
-
-    if (!fs.existsSync(videoPath)) {
-      throw new BadRequestException(`Video not found: ${fileName}`);
-    }
-    console.log(videoPath);
-    await this.broadcaster.playVideo(videoPath);
   }
 
   // -----------------------------

@@ -35,7 +35,9 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`[HTTP] Listening on http://localhost:${port}`);
-  console.log(`[WS]   Listening on ws://localhost:${port}/ws/tracker`);
+  console.log(`[WS]   Florence:  ws://localhost:${port}/ws/florence`);
+  console.log(`[WS]   Tracker:   ws://localhost:${port}/ws/tracker`);
+  console.log(`[WS]   Qwen:      ws://localhost:${port}/ws/qwen`);
 }
 
 bootstrap();
