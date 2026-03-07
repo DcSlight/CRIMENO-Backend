@@ -9,11 +9,12 @@ export class BroadcasterService {
     this.sock.connect("tcp://127.0.0.1:5561");
   }
 
-  async playVideo(videoPath: string) {
+  async playVideo(videoPath: string, videoType: "local" | "online") {
     await this.sock.send(
       JSON.stringify({
         cmd: "play",
         video: videoPath,
+        videoType: videoType,
       }),
     );
     await this.sock.receive();
