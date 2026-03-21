@@ -3,7 +3,9 @@ import { NestFactory } from '@nestjs/core';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
+import { onDatabaseConnect } from './common/config/database/database.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -33,6 +35,11 @@ async function bootstrap() {
 
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   await app.listen(port);
+
+  const dataSource = app.get(DataSource);
+  if (dataSource.isInitialized) {
+    onDatabaseConnect();
+  }
 
   console.log(`[HTTP] Listening on http://localhost:${port}`);
   console.log(`[WS]   Florence:  ws://localhost:${port}/ws/florence`);
