@@ -113,6 +113,29 @@ export class BusinessesController {
     return this.businessesService.findOneBusiness(id);
   }
 
+  @Get(':id/broadcast/preview')
+  previewBroadcastBusiness(@Param('id', ParseIntPipe) id: number) {
+    return this.businessesService.getBusinessBroadcastPayload(id);
+  }
+
+  @Post(':id/broadcast')
+  async broadcastBusiness(@Param('id', ParseIntPipe) id: number) {
+    try {
+      const payload = await this.businessesService.broadcastBusiness(id);
+      return {
+        success: true,
+        status: 'sent',
+        data: payload.data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
   @Patch('cameras/:id')
   updateCamera(
     @Param('id', ParseIntPipe) id: number,

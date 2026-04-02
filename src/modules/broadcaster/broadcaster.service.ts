@@ -19,4 +19,14 @@ export class BroadcasterService {
     );
     await this.sock.receive();
   }
+
+  async broadcastBusinessData(data: unknown) {
+    await this.sock.send(
+      JSON.stringify({
+        cmd: "business_data",
+        data,
+      }),
+    );
+    await this.sock.receive();
+  }
 }
