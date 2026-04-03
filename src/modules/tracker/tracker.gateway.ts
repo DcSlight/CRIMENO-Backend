@@ -27,6 +27,39 @@ export class TrackerGateway implements OnGatewayConnection, OnGatewayDisconnect 
     this.logger.log('❌ client disconnected');
   }
 
+  private getTrackColor(source: unknown): string {
+    const normalized = typeof source === 'string' ? source.toLowerCase() : '';
+
+    switch (normalized) {
+      case 'suspicious':
+        return 'red';
+      case 'objects':
+        return 'green';
+      default:
+        return 'green';
+    }
+  }
+
+  private buildOutboundMessage(msg: string, payload: AnyJson | null): string {
+    if (payload?.type !== 'tracker_frame' || !Array.isArray(payload.tracks)) {
+      return msg;
+    }
+
+    try {
+      const tracks = payload.tracks.map((track: AnyJson) => ({
+        ...track,
+        bbox_color: this.getTrackColor(track?.source),
+      }));
+
+      return JSON.stringify({
+        ...payload,
+        tracks,
+      });
+    } catch {
+      return msg;
+    }
+  }
+
   afterInit(server: Server) {
     server.on('connection', (ws: WebSocket) => {
       ws.on('message', (raw) => {
@@ -50,9 +83,11 @@ export class TrackerGateway implements OnGatewayConnection, OnGatewayDisconnect 
           );
         }
 
+        const outboundMessage = this.buildOutboundMessage(msg, payload);
+
         for (const client of server.clients) {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(msg);
+            client.send(outboundMessage);
           }
         }
       });

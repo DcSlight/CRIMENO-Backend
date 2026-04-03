@@ -10,6 +10,7 @@ import { CreateBusinessRuleDto } from './dto/create-business-rule.dto';
 import { UpdateBusinessRuleDto } from './dto/update-business-rule.dto';
 import { CreateCameraDto } from './dto/create-camera.dto';
 import { UpdateCameraDto } from './dto/update-camera.dto';
+import { BroadcasterService } from '../broadcaster/broadcaster.service';
 
 @Injectable()
 export class BusinessesService {
@@ -22,6 +23,7 @@ export class BusinessesService {
     private readonly businessRulesRepo: Repository<BusinessRules>,
     @InjectRepository(Camera)
     private readonly cameraRepo: Repository<Camera>,
+    private readonly broadcaster: BroadcasterService,
   ) {}
 
   private async ensureBusinessExists(id: number): Promise<void> {
@@ -259,5 +261,19 @@ export class BusinessesService {
     if (!result.affected) {
       throw new NotFoundException(`Camera ${id} not found`);
     }
+  }
+
+  async getBusinessBroadcastPayload(id: number) {
+    const business = await this.findOneBusiness(id);
+    return {
+      cmd: 'business_data' as const,
+      data: business,
+    };
+  }
+
+  async broadcastBusiness(id: number) {
+    const payload = await this.getBusinessBroadcastPayload(id);
+    await this.broadcaster.broadcastBusinessData(payload.data);
+    return payload;
   }
 }
