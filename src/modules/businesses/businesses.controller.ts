@@ -19,7 +19,7 @@ import { UpdateCameraDto } from './dto/update-camera.dto';
 @ApiTags('businesses')
 @Controller('businesses')
 export class BusinessesController {
-  constructor(private readonly businessesService: BusinessesService) {}
+  constructor(private readonly businessesService: BusinessesService) { }
 
   @ApiOperation({
     summary:
