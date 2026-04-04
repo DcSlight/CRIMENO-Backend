@@ -3,12 +3,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Business, BusinessHours, BusinessRules, Camera } from '../../database/entities';
 import { BusinessesController } from './businesses.controller';
 import { BusinessesService } from './businesses.service';
-import { BroadcasterModule } from '../broadcaster/barodcaster.module';
+import { QwenModule } from '../qwen/qwen.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Business, BusinessHours, BusinessRules, Camera]),
-    BroadcasterModule,
+    QwenModule,
   ],
   controllers: [BusinessesController],
   providers: [BusinessesService],
