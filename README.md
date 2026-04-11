@@ -33,6 +33,7 @@ The API now supports only these operations:
 - `POST /businesses` (create business)
 - `PATCH /businesses/:id` (update business)
 - `DELETE /businesses/:id` (delete business)
+- `GET /business-policies/business/:businessId` (get policy by business id)
 - `PATCH /business-policies/:id` (update policy)
 
 ## 1) Get All Businesses
@@ -145,7 +146,22 @@ Response:
 }
 ```
 
-## 5) Update Policy
+## 5) Get Policy By Business Id
+
+Endpoint:
+
+- `GET /business-policies/business/:businessId`
+
+Response:
+
+- Single `business_policy` object with related `business`.
+
+Possible errors:
+
+- `404` when the business does not exist
+- `404` when policy row is missing for that business
+
+## 6) Update Policy
 
 Endpoint:
 

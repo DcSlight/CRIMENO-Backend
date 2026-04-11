@@ -82,6 +82,7 @@ Only these routes are in scope unless user explicitly asks to expand:
 - POST /businesses
 - PATCH /businesses/:id
 - DELETE /businesses/:id
+- GET /business-policies/business/:businessId
 - PATCH /business-policies/:id
 
 ## Service Behavior Rules
@@ -114,6 +115,11 @@ When updating policy:
 - Validate policy exists.
 - If moving policy to another business_id, ensure target business exists.
 - Enforce one-policy-per-business uniqueness.
+
+When getting policy by business id:
+
+- Validate business exists.
+- Return policy with related business entity.
 
 ## Implementation Pointers
 

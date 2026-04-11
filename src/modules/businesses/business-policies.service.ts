@@ -37,6 +37,25 @@ export class BusinessPoliciesService {
     return policy;
   }
 
+  async findBusinessPolicyByBusinessId(
+    businessId: number,
+  ): Promise<BusinessPolicy> {
+    await this.ensureBusinessExists(businessId);
+
+    const policy = await this.businessPolicyRepo.findOne({
+      where: { business_id: businessId },
+      relations: { business: true },
+    });
+
+    if (!policy) {
+      throw new NotFoundException(
+        `BusinessPolicy for business ${businessId} not found`,
+      );
+    }
+
+    return policy;
+  }
+
   async updateBusinessPolicy(
     id: number,
     dto: UpdateBusinessPolicyDto,
