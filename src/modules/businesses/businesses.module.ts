@@ -10,7 +10,6 @@ import { BusinessPoliciesController } from './business-policies.controller';
 import { BusinessPoliciesService } from './business-policies.service';
 import { BusinessesController } from './businesses.controller';
 import { BusinessesService } from './businesses.service';
-import { QwenModule } from '../qwen/qwen.module';
 
 @Module({
   imports: [
@@ -20,7 +19,6 @@ import { QwenModule } from '../qwen/qwen.module';
       Camera,
       BusinessPolicy,
     ]),
-    QwenModule,
   ],
   controllers: [BusinessesController, BusinessPoliciesController],
   providers: [BusinessesService, BusinessPoliciesService],

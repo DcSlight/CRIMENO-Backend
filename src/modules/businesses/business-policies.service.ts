@@ -6,7 +6,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Business, BusinessPolicy } from '../../database/entities';
-import { CreateBusinessPolicyDto } from './dto/create-business-policy.dto';
 import { UpdateBusinessPolicyDto } from './dto/update-business-policy.dto';
 
 @Injectable()
@@ -38,28 +37,6 @@ export class BusinessPoliciesService {
     return policy;
   }
 
-  async createBusinessPolicy(
-    dto: CreateBusinessPolicyDto,
-  ): Promise<BusinessPolicy> {
-    await this.ensureBusinessExists(dto.business_id);
-
-    const existingPolicy = await this.businessPolicyRepo.exist({
-      where: { business_id: dto.business_id },
-    });
-    if (existingPolicy) {
-      throw new ConflictException(
-        `Business ${dto.business_id} already has a policy`,
-      );
-    }
-
-    const policy = this.businessPolicyRepo.create({
-      ...dto,
-      allowed_behaviors: dto.allowed_behaviors ?? [],
-      forbidden_behaviors: dto.forbidden_behaviors ?? [],
-    });
-    return this.businessPolicyRepo.save(policy);
-  }
-
   async updateBusinessPolicy(
     id: number,
     dto: UpdateBusinessPolicyDto,
@@ -81,12 +58,5 @@ export class BusinessPoliciesService {
 
     await this.businessPolicyRepo.update(id, dto);
     return this.findOneBusinessPolicy(id);
-  }
-
-  async removeBusinessPolicy(id: number): Promise<void> {
-    const result = await this.businessPolicyRepo.delete(id);
-    if (!result.affected) {
-      throw new NotFoundException(`BusinessPolicy ${id} not found`);
-    }
   }
 }
