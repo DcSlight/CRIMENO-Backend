@@ -1,13 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Business, BusinessHours, BusinessRules, Camera } from '../../database/entities';
+import { Business, BusinessHours, Camera } from '../../database/entities';
 import { CreateBusinessGraphDto } from './dto/create-business-graph.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { CreateBusinessHoursDto } from './dto/create-business-hours.dto';
 import { UpdateBusinessHoursDto } from './dto/update-business-hours.dto';
-import { CreateBusinessRuleDto } from './dto/create-business-rule.dto';
-import { UpdateBusinessRuleDto } from './dto/update-business-rule.dto';
 import { CreateCameraDto } from './dto/create-camera.dto';
 import { UpdateCameraDto } from './dto/update-camera.dto';
 import { QwenContextService } from '../qwen/qwen-context.service';
@@ -19,8 +17,6 @@ export class BusinessesService {
     private readonly businessRepo: Repository<Business>,
     @InjectRepository(BusinessHours)
     private readonly businessHoursRepo: Repository<BusinessHours>,
-    @InjectRepository(BusinessRules)
-    private readonly businessRulesRepo: Repository<BusinessRules>,
     @InjectRepository(Camera)
     private readonly cameraRepo: Repository<Camera>,
     private readonly qwenContext: QwenContextService,
@@ -37,7 +33,6 @@ export class BusinessesService {
     return this.businessRepo.manager.transaction(async (manager) => {
       const businessRepo = manager.getRepository(Business);
       const hoursRepo = manager.getRepository(BusinessHours);
-      const rulesRepo = manager.getRepository(BusinessRules);
       const camerasRepo = manager.getRepository(Camera);
 
       const business = await businessRepo.save(
@@ -62,16 +57,6 @@ export class BusinessesService {
         await hoursRepo.save(hours);
       }
 
-      if (dto.business_rules?.length) {
-        const rules = dto.business_rules.map((item) =>
-          rulesRepo.create({
-            business_id: business.id,
-            rule_description: item.rule_description,
-          }),
-        );
-        await rulesRepo.save(rules);
-      }
-
       if (dto.cameras?.length) {
         const cameras = dto.cameras.map((item) =>
           camerasRepo.create({
@@ -87,7 +72,7 @@ export class BusinessesService {
         where: { id: business.id },
         relations: {
           business_hours: true,
-          business_rules: true,
+          business_policy: true,
           cameras: true,
         },
       });
@@ -104,7 +89,7 @@ export class BusinessesService {
     return this.businessRepo.find({
       relations: {
         business_hours: true,
-        business_rules: true,
+        business_policy: true,
         cameras: true,
       },
     });
@@ -115,7 +100,7 @@ export class BusinessesService {
       where: { id },
       relations: {
         business_hours: true,
-        business_rules: true,
+        business_policy: true,
         cameras: true,
       },
     });
@@ -179,48 +164,6 @@ export class BusinessesService {
     const result = await this.businessHoursRepo.delete(id);
     if (!result.affected) {
       throw new NotFoundException(`BusinessHours ${id} not found`);
-    }
-  }
-
-  async createBusinessRule(dto: CreateBusinessRuleDto): Promise<BusinessRules> {
-    await this.ensureBusinessExists(dto.business_id);
-    const rule = this.businessRulesRepo.create(dto);
-    return this.businessRulesRepo.save(rule);
-  }
-
-  async findAllBusinessRules(): Promise<BusinessRules[]> {
-    return this.businessRulesRepo.find({ relations: { business: true } });
-  }
-
-  async findOneBusinessRule(id: number): Promise<BusinessRules> {
-    const rule = await this.businessRulesRepo.findOne({
-      where: { id },
-      relations: { business: true },
-    });
-
-    if (!rule) {
-      throw new NotFoundException(`BusinessRule ${id} not found`);
-    }
-
-    return rule;
-  }
-
-  async updateBusinessRule(
-    id: number,
-    dto: UpdateBusinessRuleDto,
-  ): Promise<BusinessRules> {
-    await this.findOneBusinessRule(id);
-    if (dto.business_id) {
-      await this.ensureBusinessExists(dto.business_id);
-    }
-    await this.businessRulesRepo.update(id, dto);
-    return this.findOneBusinessRule(id);
-  }
-
-  async removeBusinessRule(id: number): Promise<void> {
-    const result = await this.businessRulesRepo.delete(id);
-    if (!result.affected) {
-      throw new NotFoundException(`BusinessRule ${id} not found`);
     }
   }
 

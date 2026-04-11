@@ -13,7 +13,6 @@ import { BusinessesService } from './businesses.service';
 import { CreateBusinessGraphDto } from './dto/create-business-graph.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { UpdateBusinessHoursDto } from './dto/update-business-hours.dto';
-import { UpdateBusinessRuleDto } from './dto/update-business-rule.dto';
 import { UpdateCameraDto } from './dto/update-camera.dto';
 
 @ApiTags('businesses')
@@ -23,7 +22,7 @@ export class BusinessesController {
 
   @ApiOperation({
     summary:
-      'Create business and related rows (hours, rules, cameras) with a single JSON payload',
+      'Create business and related rows (hours, cameras) with a single JSON payload',
   })
   @ApiBody({ type: CreateBusinessGraphDto })
   @Post()
@@ -71,30 +70,6 @@ export class BusinessesController {
   @Delete('hours/:id')
   async removeBusinessHours(@Param('id', ParseIntPipe) id: number) {
     await this.businessesService.removeBusinessHours(id);
-    return { ok: true };
-  }
-
-  @Get('rules/all')
-  findAllBusinessRules() {
-    return this.businessesService.findAllBusinessRules();
-  }
-
-  @Get('rules/:id')
-  findOneBusinessRule(@Param('id', ParseIntPipe) id: number) {
-    return this.businessesService.findOneBusinessRule(id);
-  }
-
-  @Patch('rules/:id')
-  updateBusinessRule(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateBusinessRuleDto,
-  ) {
-    return this.businessesService.updateBusinessRule(id, dto);
-  }
-
-  @Delete('rules/:id')
-  async removeBusinessRule(@Param('id', ParseIntPipe) id: number) {
-    await this.businessesService.removeBusinessRule(id);
     return { ok: true };
   }
 

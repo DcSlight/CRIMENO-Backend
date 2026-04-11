@@ -41,15 +41,6 @@ export class CreateBusinessHoursItemDto {
   closing_time!: string;
 }
 
-export class CreateBusinessRuleItemDto {
-  @ApiProperty({
-    example: 'No smoking inside the store',
-  })
-  @IsString()
-  @IsNotEmpty()
-  rule_description!: string;
-}
-
 export class CreateCameraItemDto {
   @ApiProperty({
     example: 'Front Entrance Cam',
@@ -114,19 +105,6 @@ export class CreateBusinessGraphDto {
   @ValidateNested({ each: true })
   @Type(() => CreateBusinessHoursItemDto)
   business_hours?: CreateBusinessHoursItemDto[];
-
-  @ApiPropertyOptional({
-    type: [CreateBusinessRuleItemDto],
-    example: [
-      { rule_description: 'No smoking inside the store' },
-      { rule_description: 'Pets are not allowed' },
-    ],
-  })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateBusinessRuleItemDto)
-  business_rules?: CreateBusinessRuleItemDto[];
 
   @ApiPropertyOptional({
     type: [CreateCameraItemDto],
