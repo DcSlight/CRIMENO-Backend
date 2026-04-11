@@ -2,7 +2,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import {
   Business,
   BusinessHours,
-  BusinessRules,
+  BusinessPolicy,
   Camera,
 } from '../../../database/entities';
 
@@ -35,7 +35,7 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
     username: config.username,
     password: config.password,
     database: config.name,
-    entities: [Business, BusinessHours, BusinessRules, Camera],
+    entities: [Business, BusinessHours, Camera, BusinessPolicy],
     synchronize: config.synchronize,
   };
 };

@@ -3,10 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { BusinessHours } from './business-hours.entity';
-import { BusinessRules } from './business-rules.entity';
 import { Camera } from './camera.entity';
+import { BusinessPolicy } from './business-policy.entity';
 
 @Entity('businesses')
 export class Business {
@@ -31,9 +32,9 @@ export class Business {
   @OneToMany(() => BusinessHours, (hours) => hours.business)
   business_hours!: BusinessHours[];
 
-  @OneToMany(() => BusinessRules, (rules) => rules.business)
-  business_rules!: BusinessRules[];
-
   @OneToMany(() => Camera, (camera) => camera.business)
   cameras!: Camera[];
+
+  @OneToOne(() => BusinessPolicy, (policy) => policy.business)
+  business_policy?: BusinessPolicy;
 }
