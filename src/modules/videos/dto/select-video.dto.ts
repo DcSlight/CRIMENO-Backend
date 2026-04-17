@@ -1,7 +1,16 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsIn, IsNotEmpty, IsString } from "class-validator";
+import { IsIn, IsNotEmpty, IsNumber, IsString } from "class-validator";
 
 export class SelectVideoDto {
+
+   @ApiProperty({
+    example: "1",
+    description: "buisness id",
+  })
+  @IsNumber()
+  @IsNotEmpty()
+  businessId!: number;
+
   @ApiProperty({
     example: "/videos/shop.mp4",
     description: "Video source path",
