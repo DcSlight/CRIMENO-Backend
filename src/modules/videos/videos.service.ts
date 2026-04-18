@@ -3,6 +3,8 @@ import { ConfigService } from "@nestjs/config";
 import * as fs from "fs";
 import * as path from "path";
 import { BroadcasterService } from "../broadcaster/broadcaster.service";
+import { BusinessesService } from "../businesses/businesses.service";
+import { QwenContextService } from "../qwen/qwen-context.service";
 
 export type VideoOptionDto = {
   label: string;
@@ -14,6 +16,8 @@ export class VideosService {
   constructor(
     private readonly config: ConfigService,
     private readonly broadcaster: BroadcasterService,
+    private readonly businessesService: BusinessesService,
+    private readonly qwenContextService: QwenContextService,
   ) {}
 
   private readonly allowedExt = new Set([
@@ -27,7 +31,12 @@ export class VideosService {
   // -----------------------------
   // POST /videos/select
   // -----------------------------
-  async selectVideo(src: string, videoType: "local" | "online") {
+  async selectVideo(
+    src: string,
+    videoType: "local" | "online",
+    businessId: number,
+    includeContext: boolean,
+  ) {
     if (!src || typeof src !== "string") {
       throw new BadRequestException("src is required");
     }
@@ -55,6 +64,11 @@ export class VideosService {
       // online video - src is a URL
       console.log(src);
       await this.broadcaster.playVideo(src, "online");
+    }
+
+    if (includeContext) {
+      const business = await this.businessesService.findBusinessById(businessId);
+      await this.qwenContextService.sendBusinessContext(business);
     }
   }
 

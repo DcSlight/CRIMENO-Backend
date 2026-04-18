@@ -22,5 +22,6 @@ import { BusinessesService } from './businesses.service';
   ],
   controllers: [BusinessesController, BusinessPoliciesController],
   providers: [BusinessesService, BusinessPoliciesService],
+  exports: [BusinessesService],
 })
 export class BusinessesModule {}
