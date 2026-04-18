@@ -1,5 +1,5 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { IsIn, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsBoolean, IsIn, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class SelectVideoDto {
 
@@ -27,4 +27,13 @@ export class SelectVideoDto {
   @IsString()
   @IsIn(["local", "online"])
   videoType!: "local" | "online";
+
+  @ApiPropertyOptional({
+    example: false,
+    description: "Whether to send business context to qwen before playback",
+    default: false,
+  })
+  @IsBoolean()
+  @IsOptional()
+  includeContext: boolean = false;
 }
