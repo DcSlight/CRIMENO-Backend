@@ -33,6 +33,11 @@ export class BusinessesController {
     return this.businessesService.findAllBusinesses();
   }
 
+  @Get(':id')
+  findBusinessById(@Param('id', ParseIntPipe) id: number) {
+    return this.businessesService.findBusinessById(id);
+  }
+
   @Patch(':id')
   updateBusiness(
     @Param('id', ParseIntPipe) id: number,

@@ -81,6 +81,23 @@ export class BusinessesService {
     });
   }
 
+  async findBusinessById(id: number): Promise<Business> {
+    const business = await this.businessRepo.findOne({
+      where: { id },
+      relations: {
+        business_hours: true,
+        business_policy: true,
+        cameras: true,
+      },
+    });
+
+    if (!business) {
+      throw new NotFoundException(`Business ${id} not found`);
+    }
+
+    return business;
+  }
+
   async findAllBusinesses(): Promise<Business[]> {
     return this.businessRepo.find({
       relations: {
