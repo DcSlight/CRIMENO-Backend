@@ -4,6 +4,7 @@ import {
   BusinessHours,
   BusinessPolicy,
   Camera,
+  DetectionResult,
 } from '../../../database/entities';
 
 export const databaseConfig = () => {
@@ -35,7 +36,7 @@ export const getTypeOrmConfig = (): TypeOrmModuleOptions => {
     username: config.username,
     password: config.password,
     database: config.name,
-    entities: [Business, BusinessHours, Camera, BusinessPolicy],
+    entities: [Business, BusinessHours, Camera, BusinessPolicy, DetectionResult],
     synchronize: config.synchronize,
   };
 };

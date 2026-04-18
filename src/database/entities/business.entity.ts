@@ -8,6 +8,7 @@ import {
 import { BusinessHours } from './business-hours.entity';
 import { Camera } from './camera.entity';
 import { BusinessPolicy } from './business-policy.entity';
+import { DetectionResult } from './detection-result.entity';
 
 @Entity('businesses')
 export class Business {
@@ -37,4 +38,7 @@ export class Business {
 
   @OneToOne(() => BusinessPolicy, (policy) => policy.business)
   business_policy?: BusinessPolicy;
+
+  @OneToMany(() => DetectionResult, (result) => result.business)
+  detection_results!: DetectionResult[];
 }
