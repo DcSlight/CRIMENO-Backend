@@ -18,11 +18,12 @@ function safeStringify(value: unknown): string {
 }
 
 @WebSocketGateway({
+  // Wire format kept as /ws/qwen so the React client and Groq worker don't need changes.
   path: '/ws/qwen',
   cors: { origin: true, credentials: true },
 })
-export class QwenGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  private readonly logger = new Logger(QwenGateway.name);
+export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(GroqGateway.name);
 
   @WebSocketServer()
   server!: Server;
@@ -47,6 +48,7 @@ export class QwenGateway implements OnGatewayConnection, OnGatewayDisconnect {
           // ignore non-json
         }
 
+        // Payload type kept as 'qwen_anomaly' for wire-format compatibility.
         if (payload?.type === 'qwen_anomaly') {
           const start = payload?.frame_range?.start;
           const end = payload?.frame_range?.end;
@@ -55,11 +57,11 @@ export class QwenGateway implements OnGatewayConnection, OnGatewayDisconnect {
           const reason = payload?.result?.reason;
           const keyMoments = payload?.result?.key_moments;
           this.logger.log(
-            `🚨 qwen range=${start}-${end} label=${label} score=${score} reason=${reason} key_moments=${safeStringify(
+            `🚨 groq range=${start}-${end} label=${label} score=${score} reason=${reason} key_moments=${safeStringify(
               keyMoments,
             )}`,
           );
-          this.logger.debug(`🧾 qwen full payload: ${safeStringify(payload)}`);
+          this.logger.debug(`🧾 groq full payload: ${safeStringify(payload)}`);
         } else {
           this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
         }
