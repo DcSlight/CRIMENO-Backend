@@ -87,6 +87,12 @@ export class VideosService {
       if (policy.allowed_behaviors?.length) lines.push(`Allowed behaviors: ${policy.allowed_behaviors.join(", ")}`);
       if (policy.forbidden_behaviors?.length) lines.push(`Forbidden behaviors: ${policy.forbidden_behaviors.join(", ")}`);
     }
+    if (business.cameras?.length) {
+      lines.push(`Surveillance cameras (${business.cameras.length}) — all video frames analyzed are captured from these cameras:`);
+      for (const cam of business.cameras) {
+        lines.push(`  - ${cam.camera_name}: ${cam.location_description}`);
+      }
+    }
     return lines.join("\n");
   }
 
