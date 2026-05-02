@@ -74,10 +74,6 @@ export class VideosService {
     }
   }
 
-  async stopStream() {
-    await this.broadcaster.stopStream();
-  }
-
   private formatBusinessContext(business: Business): string {
     const lines: string[] = [];
     lines.push(`Store: ${business.store_name} (${business.store_type})`);

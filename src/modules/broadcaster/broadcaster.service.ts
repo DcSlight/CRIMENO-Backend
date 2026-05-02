@@ -20,11 +20,6 @@ export class BroadcasterService {
     await this.sock.receive();
   }
 
-  async stopStream() {
-    await this.sock.send(JSON.stringify({ cmd: "stop" }));
-    await this.sock.receive();
-  }
-
   async broadcastBusinessData(data: unknown) {
     await this.sock.send(
       JSON.stringify({
