@@ -20,4 +20,10 @@ export class VideosController {
     await this.videosService.selectVideo(body.src, body.videoType, body.businessId, body.includeContext);
     return { ok: true };
   }
+
+  @Post("stop")
+  async stop() {
+    await this.videosService.stopStream();
+    return { ok: true };
+  }
 }
