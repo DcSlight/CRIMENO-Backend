@@ -1,6 +1,6 @@
 # CRIMENO Backend API
 
-NestJS backend for business management.
+NestJS backend for CRIMENO — real-time CCTV crime/anomaly detection.
 
 ## Quick Start
 
@@ -9,21 +9,56 @@ npm install
 npm run start:dev
 ```
 
-Swagger docs:
-
-```bash
-http://localhost:3000/api/docs
-```
+Swagger docs: `http://localhost:3000/api/docs`
 
 ## Environment Variables
 
-Database connection uses these variables:
+| Var | Purpose |
+|---|---|
+| `DB_USER` `DB_PASSWORD` `DB_HOST` `DB_PORT` `DB_NAME` | PostgreSQL connection |
+| `VIDEOS_DIR` | Absolute path to the folder containing `.mp4` video files |
 
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_HOST`
-- `DB_PORT`
-- `DB_NAME`
+## WebSocket Endpoints
+
+| Path | Direction | Purpose |
+|---|---|---|
+| `ws://localhost:3000/ws/groq` | Model → Client | Groq anomaly results (`groq_anomaly` payloads) |
+| `ws://localhost:3000/ws/florence` | Model → Client | Florence scene captions |
+| `ws://localhost:3000/ws/tracker` | Model → Client | YOLOv8 bounding-box tracks |
+
+The Groq gateway (`src/modules/groq/groq.gateway.ts`) fans out all incoming messages to every connected browser client.
+
+## Video Selection
+
+### `POST /videos/selection`
+
+Triggers the Python ML pipeline for a chosen video. When `includeContext` is true the backend fetches the business record by `businessId` and forwards a formatted context string to the Groq worker via ZMQ (`tcp://127.0.0.1:5581`) so Groq can tailor its anomaly reasoning to the specific business.
+
+Request body:
+
+```json
+{
+  "src": "/videos/store-cam.mp4",
+  "videoType": "local",
+  "businessId": 1,
+  "includeContext": true
+}
+```
+
+Context sent to Groq (example):
+
+```
+Store: Downtown Market (grocery)
+Description: Neighborhood store with fresh produce.
+Location: 123 King St W, Toronto
+Sensitivity: high; scoring: aggressive; interaction: medium
+Allowed behaviors: customers chatting
+Forbidden behaviors: restricted area access
+```
+
+### `GET /videos`
+
+Returns a list of available local video files from `VIDEOS_DIR`.
 
 ## Supported Endpoints Only
 

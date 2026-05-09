@@ -4,7 +4,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { BroadcasterService } from "../broadcaster/broadcaster.service";
 import { BusinessesService } from "../businesses/businesses.service";
-import { QwenContextService } from "../qwen/qwen-context.service";
+import { Business } from "../../database/entities";
+import { GroqContextService } from "../groq/groq-context.service";
 
 export type VideoOptionDto = {
   label: string;
@@ -17,7 +18,7 @@ export class VideosService {
     private readonly config: ConfigService,
     private readonly broadcaster: BroadcasterService,
     private readonly businessesService: BusinessesService,
-    private readonly qwenContextService: QwenContextService,
+    private readonly groqContextService: GroqContextService,
   ) {}
 
   private readonly allowedExt = new Set([
@@ -68,8 +69,31 @@ export class VideosService {
 
     if (includeContext) {
       const business = await this.businessesService.findBusinessById(businessId);
-      await this.qwenContextService.sendBusinessContext(business);
+      const contextText = this.formatBusinessContext(business);
+      await this.groqContextService.sendBusinessContext(contextText);
     }
+  }
+
+  private formatBusinessContext(business: Business): string {
+    const lines: string[] = [];
+    lines.push(`Store: ${business.store_name} (${business.store_type})`);
+    if (business.description) lines.push(`Description: ${business.description}`);
+    if (business.address || business.city) {
+      lines.push(`Location: ${[business.address, business.city].filter(Boolean).join(", ")}`);
+    }
+    const policy = business.business_policy;
+    if (policy) {
+      lines.push(`Sensitivity: ${policy.sensitivity_level}; scoring: ${policy.scoring_level}; interaction: ${policy.interaction_sensitivity}`);
+      if (policy.allowed_behaviors?.length) lines.push(`Allowed behaviors: ${policy.allowed_behaviors.join(", ")}`);
+      if (policy.forbidden_behaviors?.length) lines.push(`Forbidden behaviors: ${policy.forbidden_behaviors.join(", ")}`);
+    }
+    if (business.cameras?.length) {
+      lines.push(`Surveillance cameras (${business.cameras.length}) — all video frames analyzed are captured from these cameras:`);
+      for (const cam of business.cameras) {
+        lines.push(`  - ${cam.camera_name}: ${cam.location_description}`);
+      }
+    }
+    return lines.join("\n");
   }
 
   // -----------------------------

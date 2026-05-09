@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import * as zmq from 'zeromq';
 
 @Injectable()
-export class QwenContextService {
+export class GroqContextService {
   private readonly sock = new zmq.Push();
 
   constructor() {
-    this.sock.connect('tcp://127.0.0.1:5580');
+    this.sock.connect('tcp://127.0.0.1:5581');
   }
 
   async sendBusinessContext(context: unknown) {

@@ -5,7 +5,7 @@ import { HealthModule } from './modules/health/health.module';
 import { FlorenceModule } from './modules/florence/florence.module';
 import configuration from './common/config/configuration';
 import { TrackerModule } from './modules/tracker/tracker.module';
-import { QwenModule } from './modules/qwen/qwen.module';
+import { GroqModule } from './modules/groq/groq.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import {
@@ -25,7 +25,7 @@ import {
     HealthModule,
     FlorenceModule,
     TrackerModule,
-    QwenModule,
+    GroqModule,
     VideosModule,
     BusinessesModule,
   ],
