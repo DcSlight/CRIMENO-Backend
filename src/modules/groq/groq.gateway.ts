@@ -6,6 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, WebSocket } from 'ws';
+import { BroadcasterService } from '../broadcaster/broadcaster.service';
 
 type AnyJson = Record<string, any>;
 
@@ -26,6 +27,8 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @WebSocketServer()
   server!: Server;
+
+  constructor(private readonly broadcaster: BroadcasterService) {}
 
   handleConnection(client: WebSocket) {
     this.logger.log('✅ client connected');
@@ -62,6 +65,11 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
           this.logger.debug(`🧾 groq full payload: ${safeStringify(payload)}`);
         } else {
           this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
+        }
+
+        if (!this.broadcaster.isReady()) {
+          this.logger.warn('[GATE] Dropping stale groq message during reset window');
+          return;
         }
 
         for (const client of server.clients) {
