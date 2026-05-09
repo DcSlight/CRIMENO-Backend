@@ -4,9 +4,8 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Server, WebSocket } from 'ws';
-import { BroadcasterService } from '../broadcaster/broadcaster.service';
 
 type AnyJson = Record<string, any>;
 
@@ -19,8 +18,6 @@ export class FlorenceGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   @WebSocketServer()
   server!: Server;
-
-  constructor(private readonly broadcaster: BroadcasterService) {}
 
   handleConnection(client: WebSocket) {
     this.logger.log('✅ client connected');
@@ -54,11 +51,6 @@ export class FlorenceGateway implements OnGatewayConnection, OnGatewayDisconnect
           );
         } else {
           this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
-        }
-
-        if (!this.broadcaster.isReady()) {
-          this.logger.warn('[GATE] Dropping stale florence message during reset window');
-          return;
         }
 
         for (const client of server.clients) {

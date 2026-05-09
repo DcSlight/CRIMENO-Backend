@@ -6,7 +6,6 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, WebSocket } from 'ws';
-import { BroadcasterService } from '../broadcaster/broadcaster.service';
 
 type AnyJson = Record<string, any>;
 
@@ -19,8 +18,6 @@ export class TrackerGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
   @WebSocketServer()
   server!: Server;
-
-  constructor(private readonly broadcaster: BroadcasterService) {}
 
   handleConnection(client: WebSocket) {
     this.logger.log('✅ client connected');
@@ -84,11 +81,6 @@ export class TrackerGateway implements OnGatewayConnection, OnGatewayDisconnect 
           this.logger.log(
             `⚡ tracker frame=${frame} t=${t}ms tracks=${tracks} motion=${motion}`,
           );
-        }
-
-        if (!this.broadcaster.isReady()) {
-          this.logger.warn('[GATE] Dropping stale tracker message during reset window');
-          return;
         }
 
         const outboundMessage = this.buildOutboundMessage(msg, payload);
