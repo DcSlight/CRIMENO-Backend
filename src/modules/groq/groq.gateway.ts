@@ -35,6 +35,15 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log('❌ client disconnected');
   }
 
+  broadcast(payload: unknown): void {
+    const msg = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    for (const client of this.server.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    }
+  }
+
   afterInit(server: Server) {
     server.on('connection', (ws: WebSocket) => {
       ws.on('message', (raw) => {
