@@ -1,79 +1,224 @@
-## Project setup
+# CRIMENO Backend API
+
+NestJS backend for CRIMENO — real-time CCTV crime/anomaly detection.
+
+## Quick Start
 
 ```bash
-$ npm install
+npm install
+npm run start:dev
 ```
 
-## URL
+Swagger docs: `http://localhost:3000/api/docs`
 
-```bash
-http://localhost:3000/api/docs
+## Environment Variables
+
+| Var | Purpose |
+|---|---|
+| `DB_USER` `DB_PASSWORD` `DB_HOST` `DB_PORT` `DB_NAME` | PostgreSQL connection |
+| `VIDEOS_DIR` | Absolute path to the folder containing `.mp4` video files |
+
+## WebSocket Endpoints
+
+| Path | Direction | Purpose |
+|---|---|---|
+| `ws://localhost:3000/ws/groq` | Model → Client | Groq anomaly results (`groq_anomaly` payloads) |
+| `ws://localhost:3000/ws/florence` | Model → Client | Florence scene captions |
+| `ws://localhost:3000/ws/tracker` | Model → Client | YOLOv8 bounding-box tracks |
+
+The Groq gateway (`src/modules/groq/groq.gateway.ts`) fans out all incoming messages to every connected browser client.
+
+## Video Selection
+
+### `POST /videos/selection`
+
+Triggers the Python ML pipeline for a chosen video. When `includeContext` is true the backend fetches the business record by `businessId` and forwards a formatted context string to the Groq worker via ZMQ (`tcp://127.0.0.1:5581`) so Groq can tailor its anomaly reasoning to the specific business.
+
+Request body:
+
+```json
+{
+  "src": "/videos/store-cam.mp4",
+  "videoType": "local",
+  "businessId": 1,
+  "includeContext": true
+}
 ```
 
-## Compile and run the project
+Context sent to Groq (example):
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```
+Store: Downtown Market (grocery)
+Description: Neighborhood store with fresh produce.
+Location: 123 King St W, Toronto
+Sensitivity: high; scoring: aggressive; interaction: medium
+Allowed behaviors: customers chatting
+Forbidden behaviors: restricted area access
 ```
 
-## Run tests
+### `GET /videos`
 
-```bash
-# unit tests
-$ npm run test
+Returns a list of available local video files from `VIDEOS_DIR`.
 
-# e2e tests
-$ npm run test:e2e
+## Supported Endpoints Only
 
-# test coverage
-$ npm run test:cov
+The API now supports only these operations:
+
+- `GET /businesses` (get all businesses)
+- `POST /businesses` (create business)
+- `PATCH /businesses/:id` (update business)
+- `DELETE /businesses/:id` (delete business)
+- `GET /business-policies/business/:businessId` (get policy by business id)
+- `PATCH /business-policies/:id` (update policy)
+
+## 1) Get All Businesses
+
+Endpoint:
+
+- `GET /businesses`
+
+Response:
+
+- Array of business objects including `business_hours`, `business_policy`, and `cameras`.
+
+## 2) Create Business
+
+Endpoint:
+
+- `POST /businesses`
+
+Content type:
+
+- `application/json`
+
+Request body:
+
+```json
+{
+  "store_name": "Downtown Market",
+  "store_type": "grocery",
+  "description": "Neighborhood store with fresh produce and daily essentials.",
+  "city": "Toronto",
+  "address": "123 King St W",
+  "business_hours": [
+    {
+      "day_of_week": "monday",
+      "opening_time": "09:00",
+      "closing_time": "18:00"
+    }
+  ],
+  "cameras": [
+    {
+      "camera_name": "Front Entrance Cam",
+      "location_description": "Mounted above the main entrance door"
+    }
+  ],
+  "business_policy": {
+    "sensitivity_level": "high",
+    "scoring_level": "aggressive",
+    "interaction_sensitivity": "medium",
+    "allowed_behaviors": ["customers chatting"],
+    "forbidden_behaviors": ["restricted area access"]
+  }
+}
 ```
 
-## Deployment
+Validation rules:
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+- `store_name` required string
+- `store_type` required string
+- `description` required string
+- `city` required string
+- `address` required string
+- `business_hours` optional array
+- `business_hours[].day_of_week` required string
+- `business_hours[].opening_time` required time string in `HH:mm` or `HH:mm:ss`
+- `business_hours[].closing_time` required time string in `HH:mm` or `HH:mm:ss`
+- `cameras` optional array
+- `cameras[].camera_name` required string
+- `cameras[].location_description` required string
+- `business_policy` optional object
+- `business_policy.sensitivity_level` optional enum (`low` | `medium` | `high`)
+- `business_policy.scoring_level` optional enum (`conservative` | `balanced` | `aggressive`)
+- `business_policy.interaction_sensitivity` optional enum (`low` | `medium` | `high`)
+- `business_policy.allowed_behaviors` optional string[]
+- `business_policy.forbidden_behaviors` optional string[]
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Notes:
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+- Create runs inside a DB transaction.
+- A policy row is created automatically for each new business.
+- If `business_policy` is provided in POST, those values are used.
+- If `business_policy` is omitted, policy defaults are used.
+- If any insert fails, the whole transaction is rolled back.
+
+## 3) Update Business
+
+Endpoint:
+
+- `PATCH /businesses/:id`
+
+Partial request body (all fields optional):
+
+```json
+{
+  "store_name": "Downtown Market Updated",
+  "description": "Updated store description"
+}
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 4) Delete Business
 
-## Resources
+Endpoint:
 
-Check out a few resources that may come in handy when working with NestJS:
+- `DELETE /businesses/:id`
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Response:
 
-## Support
+```json
+{
+  "ok": true
+}
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## 5) Get Policy By Business Id
 
-## Stay in touch
+Endpoint:
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- `GET /business-policies/business/:businessId`
 
-## License
+Response:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Single `business_policy` object with related `business`.
 
-Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+Possible errors:
+
+- `404` when the business does not exist
+- `404` when policy row is missing for that business
+
+## 6) Update Policy
+
+Endpoint:
+
+- `PATCH /business-policies/:id`
+
+Partial request body (all fields optional):
+
+```json
+{
+  "sensitivity_level": "high",
+  "scoring_level": "aggressive",
+  "interaction_sensitivity": "medium",
+  "allowed_behaviors": ["customers chatting"],
+  "forbidden_behaviors": ["restricted area access"]
+}
+```
+
+Optional fields include:
+
+- `business_id`
+- `sensitivity_level` (`low` | `medium` | `high`)
+- `scoring_level` (`conservative` | `balanced` | `aggressive`)
+- `interaction_sensitivity` (`low` | `medium` | `high`)
+- `allowed_behaviors` (string[])
+- `forbidden_behaviors` (string[])

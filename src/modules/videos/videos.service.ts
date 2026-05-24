@@ -3,6 +3,9 @@ import { ConfigService } from "@nestjs/config";
 import * as fs from "fs";
 import * as path from "path";
 import { BroadcasterService } from "../broadcaster/broadcaster.service";
+import { BusinessesService } from "../businesses/businesses.service";
+import { Business } from "../../database/entities";
+import { GroqContextService } from "../groq/groq-context.service";
 
 export type VideoOptionDto = {
   label: string;
@@ -14,6 +17,8 @@ export class VideosService {
   constructor(
     private readonly config: ConfigService,
     private readonly broadcaster: BroadcasterService,
+    private readonly businessesService: BusinessesService,
+    private readonly groqContextService: GroqContextService,
   ) {}
 
   private readonly allowedExt = new Set([
@@ -27,29 +32,68 @@ export class VideosService {
   // -----------------------------
   // POST /videos/select
   // -----------------------------
-  async selectVideo(src: string) {
+  async selectVideo(
+    src: string,
+    videoType: "local" | "online",
+    businessId: number,
+    includeContext: boolean,
+  ) {
     if (!src || typeof src !== "string") {
       throw new BadRequestException("src is required");
     }
 
-    if (!src.startsWith("/videos/")) {
-      throw new BadRequestException("src must start with /videos/");
+    if (videoType === "local") {
+      if (!src.startsWith("/videos/")) {
+        throw new BadRequestException("src must start with /videos/");
+      }
+
+      const fileName = path.basename(src);
+      const ext = path.extname(fileName).toLowerCase();
+
+      if (!this.allowedExt.has(ext)) {
+        throw new BadRequestException(`Unsupported video extension: ${ext}`);
+      }
+
+      const videoPath = path.join(this.getVideosDirFromEnv(), fileName);
+
+      if (!fs.existsSync(videoPath)) {
+        throw new BadRequestException(`Video not found: ${fileName}`);
+      }
+      console.log(videoPath);
+      await this.broadcaster.playVideo(videoPath, "local");
+    } else {
+      // online video - src is a URL
+      console.log(src);
+      await this.broadcaster.playVideo(src, "online");
     }
 
-    const fileName = path.basename(src);
-    const ext = path.extname(fileName).toLowerCase();
-
-    if (!this.allowedExt.has(ext)) {
-      throw new BadRequestException(`Unsupported video extension: ${ext}`);
+    if (includeContext) {
+      const business = await this.businessesService.findBusinessById(businessId);
+      const contextText = this.formatBusinessContext(business);
+      await this.groqContextService.sendBusinessContext(contextText);
     }
+  }
 
-    const videoPath = path.join(this.getVideosDirFromEnv(), fileName);
-
-    if (!fs.existsSync(videoPath)) {
-      throw new BadRequestException(`Video not found: ${fileName}`);
+  private formatBusinessContext(business: Business): string {
+    const lines: string[] = [];
+    lines.push(`Store: ${business.store_name} (${business.store_type})`);
+    if (business.description) lines.push(`Description: ${business.description}`);
+    if (business.address || business.city) {
+      lines.push(`Location: ${[business.address, business.city].filter(Boolean).join(", ")}`);
     }
-    console.log(videoPath);
-    await this.broadcaster.playVideo(videoPath);
+    const policy = business.business_policy;
+    if (policy) {
+      lines.push(`Sensitivity: ${policy.sensitivity_level}; scoring: ${policy.scoring_level}; interaction: ${policy.interaction_sensitivity}`);
+      if (policy.allowed_behaviors?.length) lines.push(`Allowed behaviors: ${policy.allowed_behaviors.join(", ")}`);
+      if (policy.forbidden_behaviors?.length) lines.push(`Forbidden behaviors: ${policy.forbidden_behaviors.join(", ")}`);
+    }
+    if (business.cameras?.length) {
+      lines.push(`Surveillance cameras (${business.cameras.length}) — all video frames analyzed are captured from these cameras:`);
+      for (const cam of business.cameras) {
+        lines.push(`  - ${cam.camera_name}: ${cam.location_description}`);
+      }
+    }
+    return lines.join("\n");
   }
 
   // -----------------------------
