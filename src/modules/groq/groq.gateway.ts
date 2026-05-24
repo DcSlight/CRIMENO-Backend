@@ -6,6 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, WebSocket } from 'ws';
+import Pusher from 'pusher';
 
 type AnyJson = Record<string, any>;
 
@@ -23,6 +24,13 @@ function safeStringify(value: unknown): string {
 })
 export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(GroqGateway.name);
+  private readonly pusher = new Pusher({
+    appId: process.env.PUSHER_APP_ID!,
+    key: process.env.PUSHER_KEY!,
+    secret: process.env.PUSHER_SECRET!,
+    cluster: process.env.PUSHER_CLUSTER!,
+    useTLS: true,
+  });
 
   @WebSocketServer()
   server!: Server;
@@ -41,6 +49,17 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (client.readyState === WebSocket.OPEN) {
         client.send(msg);
       }
+    }
+    void this.triggerPusher(payload);
+  }
+
+  private async triggerPusher(payload: unknown): Promise<void> {
+    try {
+      const data = (typeof payload === 'string' ? JSON.parse(payload) : payload) as AnyJson;
+      await this.pusher.trigger('groq-alerts', 'groq_anomaly', data);
+      this.logger.log('📡 Pusher event triggered');
+    } catch (err) {
+      this.logger.error('Pusher trigger failed', err);
     }
   }
 
@@ -78,6 +97,8 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.send(msg);
           }
         }
+
+        void this.triggerPusher(payload ?? msg);
       });
     });
   }
