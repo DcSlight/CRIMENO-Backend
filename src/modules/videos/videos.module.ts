@@ -1,11 +1,12 @@
 import { Module } from "@nestjs/common";
 import { VideosController } from "./videos.controller";
 import { VideosService } from "./videos.service";
-import { BroadcasterService } from "../broadcaster/broadcaster.service";
 import { BroadcasterModule } from "../broadcaster/barodcaster.module";
+import { BusinessesModule } from "../businesses/businesses.module";
+import { GroqModule } from "../groq/groq.module";
 
 @Module({
-   imports: [BroadcasterModule],
+  imports: [BroadcasterModule, BusinessesModule, GroqModule],
   controllers: [VideosController],
   providers: [VideosService],
 })

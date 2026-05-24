@@ -18,11 +18,11 @@ function safeStringify(value: unknown): string {
 }
 
 @WebSocketGateway({
-  path: '/ws/qwen',
+  path: '/ws/groq',
   cors: { origin: true, credentials: true },
 })
-export class QwenGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  private readonly logger = new Logger(QwenGateway.name);
+export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(GroqGateway.name);
 
   @WebSocketServer()
   server!: Server;
@@ -33,6 +33,15 @@ export class QwenGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   handleDisconnect(client: WebSocket) {
     this.logger.log('❌ client disconnected');
+  }
+
+  broadcast(payload: unknown): void {
+    const msg = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    for (const client of this.server.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(msg);
+      }
+    }
   }
 
   afterInit(server: Server) {
@@ -47,7 +56,7 @@ export class QwenGateway implements OnGatewayConnection, OnGatewayDisconnect {
           // ignore non-json
         }
 
-        if (payload?.type === 'qwen_anomaly') {
+        if (payload?.type === 'groq_anomaly') {
           const start = payload?.frame_range?.start;
           const end = payload?.frame_range?.end;
           const label = payload?.result?.label;
@@ -55,11 +64,11 @@ export class QwenGateway implements OnGatewayConnection, OnGatewayDisconnect {
           const reason = payload?.result?.reason;
           const keyMoments = payload?.result?.key_moments;
           this.logger.log(
-            `🚨 qwen range=${start}-${end} label=${label} score=${score} reason=${reason} key_moments=${safeStringify(
+            `🚨 [groq_anomaly] range=${start}-${end} label=${label} score=${score} reason=${reason} key_moments=${safeStringify(
               keyMoments,
             )}`,
           );
-          this.logger.debug(`🧾 qwen full payload: ${safeStringify(payload)}`);
+          this.logger.debug(`🧾 groq full payload: ${safeStringify(payload)}`);
         } else {
           this.logger.log(`📦 got message: ${msg.slice(0, 180)}`);
         }

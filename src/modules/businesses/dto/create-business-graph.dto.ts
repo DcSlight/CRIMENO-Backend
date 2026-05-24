@@ -2,12 +2,17 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
   Matches,
   ValidateNested,
 } from 'class-validator';
+import {
+  ScoringLevel,
+  SensitivityLevel,
+} from '../../../database/entities/business-policy.entity';
 
 const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
 
@@ -41,15 +46,6 @@ export class CreateBusinessHoursItemDto {
   closing_time!: string;
 }
 
-export class CreateBusinessRuleItemDto {
-  @ApiProperty({
-    example: 'No smoking inside the store',
-  })
-  @IsString()
-  @IsNotEmpty()
-  rule_description!: string;
-}
-
 export class CreateCameraItemDto {
   @ApiProperty({
     example: 'Front Entrance Cam',
@@ -64,6 +60,41 @@ export class CreateCameraItemDto {
   @IsString()
   @IsNotEmpty()
   location_description!: string;
+}
+
+export class CreateBusinessPolicyItemDto {
+  @ApiPropertyOptional({ enum: SensitivityLevel, example: SensitivityLevel.MEDIUM })
+  @IsEnum(SensitivityLevel)
+  @IsOptional()
+  sensitivity_level?: SensitivityLevel;
+
+  @ApiPropertyOptional({ enum: ScoringLevel, example: ScoringLevel.BALANCED })
+  @IsEnum(ScoringLevel)
+  @IsOptional()
+  scoring_level?: ScoringLevel;
+
+  @ApiPropertyOptional({ enum: SensitivityLevel, example: SensitivityLevel.MEDIUM })
+  @IsEnum(SensitivityLevel)
+  @IsOptional()
+  interaction_sensitivity?: SensitivityLevel;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Customers browsing aisles'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  allowed_behaviors?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Entering staff-only areas'],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  forbidden_behaviors?: string[];
 }
 
 export class CreateBusinessGraphDto {
@@ -116,19 +147,6 @@ export class CreateBusinessGraphDto {
   business_hours?: CreateBusinessHoursItemDto[];
 
   @ApiPropertyOptional({
-    type: [CreateBusinessRuleItemDto],
-    example: [
-      { rule_description: 'No smoking inside the store' },
-      { rule_description: 'Pets are not allowed' },
-    ],
-  })
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateBusinessRuleItemDto)
-  business_rules?: CreateBusinessRuleItemDto[];
-
-  @ApiPropertyOptional({
     type: [CreateCameraItemDto],
     example: [
       {
@@ -146,4 +164,19 @@ export class CreateBusinessGraphDto {
   @ValidateNested({ each: true })
   @Type(() => CreateCameraItemDto)
   cameras?: CreateCameraItemDto[];
+
+  @ApiPropertyOptional({
+    type: CreateBusinessPolicyItemDto,
+    example: {
+      sensitivity_level: 'high',
+      scoring_level: 'aggressive',
+      interaction_sensitivity: 'medium',
+      allowed_behaviors: ['customers chatting'],
+      forbidden_behaviors: ['restricted area access'],
+    },
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateBusinessPolicyItemDto)
+  business_policy?: CreateBusinessPolicyItemDto;
 }

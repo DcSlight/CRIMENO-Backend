@@ -5,11 +5,12 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
+  CreateDateColumn,
 } from 'typeorm';
 import { Business } from './business.entity';
 
-@Entity('business_rules')
-export class BusinessRules {
+@Entity('detection_results')
+export class DetectionResult {
   @PrimaryGeneratedColumn()
   id!: number;
 
@@ -17,10 +18,16 @@ export class BusinessRules {
   @Column({ nullable: false })
   business_id!: number;
 
-  @Column('text', { nullable: false })
-  rule_description!: string;
+  @Column({ type: 'json', nullable: true })
+  florence_output!: object | null;
 
-  @ManyToOne(() => Business, (business) => business.business_rules, {
+  @Column({ type: 'json', nullable: true })
+  qwen_output!: object | null;
+
+  @CreateDateColumn()
+  created_at!: Date;
+
+  @ManyToOne(() => Business, (business) => business.detection_results, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'business_id' })
