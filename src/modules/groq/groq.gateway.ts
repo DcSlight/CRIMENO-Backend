@@ -6,6 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, WebSocket } from 'ws';
+import Expo from 'expo-server-sdk';
 
 type AnyJson = Record<string, any>;
 
@@ -23,6 +24,7 @@ function safeStringify(value: unknown): string {
 })
 export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(GroqGateway.name);
+  private readonly expo = new Expo();
 
   @WebSocketServer()
   server!: Server;
@@ -41,6 +43,33 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (client.readyState === WebSocket.OPEN) {
         client.send(msg);
       }
+    }
+    void this.sendPushIfNeeded(payload);
+  }
+
+  private async sendPushIfNeeded(payload: unknown): Promise<void> {
+    const token = process.env.EXPO_PUSH_TOKEN;
+    if (!token || !Expo.isExpoPushToken(token)) return;
+
+    const p = payload as AnyJson;
+    if (p?.['type'] !== 'groq_anomaly') return;
+
+    const label: string = p?.['result']?.['label'];
+    if (label !== 'criminal' && label !== 'suspicious') return;
+
+    const reason: string = p?.['result']?.['reason'] || 'Anomaly detected.';
+    const isCriminal = label === 'criminal';
+
+    try {
+      await this.expo.sendPushNotificationsAsync([{
+        to: token,
+        sound: 'default',
+        title: isCriminal ? '🚨 Critical Alert – CrimeNo' : '⚠️ Suspicious Activity – CrimeNo',
+        body: reason,
+      }]);
+      this.logger.log(`📲 Push notification sent to ${token.slice(0, 30)}…`);
+    } catch (err) {
+      this.logger.error('Push notification failed', err);
     }
   }
 
