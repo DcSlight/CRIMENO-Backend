@@ -6,7 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server, WebSocket } from 'ws';
-import Expo from 'expo-server-sdk';
+import Pusher from 'pusher';
 
 type AnyJson = Record<string, any>;
 
@@ -24,7 +24,13 @@ function safeStringify(value: unknown): string {
 })
 export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(GroqGateway.name);
-  private readonly expo = new Expo();
+  private readonly pusher = new Pusher({
+    appId: process.env.PUSHER_APP_ID!,
+    key: process.env.PUSHER_KEY!,
+    secret: process.env.PUSHER_SECRET!,
+    cluster: process.env.PUSHER_CLUSTER!,
+    useTLS: true,
+  });
 
   @WebSocketServer()
   server!: Server;
@@ -44,32 +50,16 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.send(msg);
       }
     }
-    void this.sendPushIfNeeded(payload);
+    void this.triggerPusher(payload);
   }
 
-  private async sendPushIfNeeded(payload: unknown): Promise<void> {
-    const token = process.env.EXPO_PUSH_TOKEN;
-    if (!token || !Expo.isExpoPushToken(token)) return;
-
-    const p = payload as AnyJson;
-    if (p?.['type'] !== 'groq_anomaly') return;
-
-    const label: string = p?.['result']?.['label'];
-    if (label !== 'criminal' && label !== 'suspicious') return;
-
-    const reason: string = p?.['result']?.['reason'] || 'Anomaly detected.';
-    const isCriminal = label === 'criminal';
-
+  private async triggerPusher(payload: unknown): Promise<void> {
     try {
-      await this.expo.sendPushNotificationsAsync([{
-        to: token,
-        sound: 'default',
-        title: isCriminal ? '🚨 Critical Alert – CrimeNo' : '⚠️ Suspicious Activity – CrimeNo',
-        body: reason,
-      }]);
-      this.logger.log(`📲 Push notification sent to ${token.slice(0, 30)}…`);
+      const data = (typeof payload === 'string' ? JSON.parse(payload) : payload) as AnyJson;
+      await this.pusher.trigger('groq-alerts', 'groq_anomaly', data);
+      this.logger.log('📡 Pusher event triggered');
     } catch (err) {
-      this.logger.error('Push notification failed', err);
+      this.logger.error('Pusher trigger failed', err);
     }
   }
 
@@ -107,6 +97,8 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.send(msg);
           }
         }
+
+        void this.triggerPusher(payload ?? msg);
       });
     });
   }
