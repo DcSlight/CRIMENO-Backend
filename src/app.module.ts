@@ -8,6 +8,7 @@ import { TrackerModule } from './modules/tracker/tracker.module';
 import { GroqModule } from './modules/groq/groq.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import {
   databaseConfig,
   getTypeOrmConfig,
@@ -28,6 +29,7 @@ import {
     GroqModule,
     VideosModule,
     BusinessesModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
