@@ -5,6 +5,7 @@ import { GroqGateway } from '../groq/groq.gateway';
 import { FlorenceGateway } from '../florence/florence.gateway';
 
 const MOCK_FPS = 30;
+const START_DELAY_MS = 1000;
 
 function parseJsonl<T>(filePath: string): T[] {
   const text = fs.readFileSync(filePath, 'utf-8');
@@ -76,7 +77,7 @@ export class DemoReplayService implements OnModuleDestroy {
 
     for (const entry of groqEntries) {
       const startFrame = entry.frame_range?.start ?? 0;
-      const delayMs = startFrame * (1000 / MOCK_FPS);
+      const delayMs = START_DELAY_MS + startFrame * (1000 / MOCK_FPS);
       const t = setTimeout(() => {
         this.groqGateway.broadcast(entry);
       }, delayMs);
@@ -84,7 +85,7 @@ export class DemoReplayService implements OnModuleDestroy {
     }
 
     for (const entry of vlmEntries) {
-      const delayMs = entry.video_time_ms ?? 0;
+      const delayMs = START_DELAY_MS + (entry.video_time_ms ?? 0);
       const t = setTimeout(() => {
         this.florenceGateway.broadcast(entry);
       }, delayMs);
