@@ -54,6 +54,9 @@ export class GroqGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   private async triggerPusher(payload: unknown): Promise<void> {
+    if (process.env.PUSHER_SEND !== 'true') {
+      return;
+    }
     try {
       const data = (typeof payload === 'string' ? JSON.parse(payload) : payload) as AnyJson;
       await this.pusher.trigger('groq-alerts', 'groq_anomaly', data);
