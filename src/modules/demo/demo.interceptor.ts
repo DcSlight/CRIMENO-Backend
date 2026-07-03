@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   CallHandler,
   ExecutionContext,
   Injectable,
@@ -9,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { Observable, of } from 'rxjs';
 import { DEMO_KEY } from './demo.decorator';
 import { DemoReplayService } from './demo-replay.service';
+import { toDemoKey } from './demo-key.util';
 
 @Injectable()
 export class DemoInterceptor implements NestInterceptor {
@@ -22,7 +24,12 @@ export class DemoInterceptor implements NestInterceptor {
     const isMarked = this.reflector.get<boolean>(DEMO_KEY, context.getHandler());
 
     if (isMarked && this.config.get<boolean>('demoMode')) {
-      this.demoReplay.start();
+      const src: unknown = context.switchToHttp().getRequest().body?.src;
+      if (typeof src !== 'string' || !src) {
+        throw new BadRequestException('src is required to resolve the demo dataset');
+      }
+
+      this.demoReplay.start(toDemoKey(src));
       return of({ ok: true });
     }
 
