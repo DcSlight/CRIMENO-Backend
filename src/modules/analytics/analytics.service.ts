@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import {
   AnomalyTimePoint,
   AnomalyTypeCount,
+  Business,
   BusinessPeopleCount,
   ConfusionMatrix,
   Kpis,
@@ -9,8 +10,9 @@ import {
   WordFrequency,
 } from "./analytics.types";
 import {
-  anomaliesOverTime,
   anomalyByType,
+  anomalyTrendByBusiness,
+  businesses,
   confusionMatrix,
   kpis,
   peopleByBusiness,
@@ -26,8 +28,13 @@ export class AnalyticsService {
     return kpis;
   }
 
-  getAnomalyTrend(): AnomalyTimePoint[] {
-    return anomaliesOverTime;
+  getBusinesses(): Business[] {
+    return businesses;
+  }
+
+  getAnomalyTrend(business?: string): AnomalyTimePoint[] {
+    const key = business ?? businesses[0].key;
+    return anomalyTrendByBusiness[key] ?? anomalyTrendByBusiness[businesses[0].key];
   }
 
   getAnomalyType(): AnomalyTypeCount[] {

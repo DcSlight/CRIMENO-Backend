@@ -7,10 +7,15 @@ export interface Kpis {
 }
 
 export interface AnomalyTimePoint {
-  date: string;
+  time: string; // seconds into the business's video, e.g. "18s"
   normal: number;
   suspicious: number;
   criminal: number;
+}
+
+export interface Business {
+  key: string;
+  name: string;
 }
 
 export interface AnomalyTypeCount {

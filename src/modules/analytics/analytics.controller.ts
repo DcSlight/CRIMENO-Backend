@@ -1,9 +1,10 @@
-import { Controller, Get } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
+import { Controller, Get, Query } from "@nestjs/common";
+import { ApiQuery, ApiTags } from "@nestjs/swagger";
 import { AnalyticsService } from "./analytics.service";
 import type {
   AnomalyTimePoint,
   AnomalyTypeCount,
+  Business,
   BusinessPeopleCount,
   ConfusionMatrix,
   Kpis,
@@ -21,9 +22,19 @@ export class AnalyticsController {
     return this.analyticsService.getKpis();
   }
 
+  @Get("businesses")
+  getBusinesses(): Business[] {
+    return this.analyticsService.getBusinesses();
+  }
+
   @Get("anomaly-trend")
-  getAnomalyTrend(): AnomalyTimePoint[] {
-    return this.analyticsService.getAnomalyTrend();
+  @ApiQuery({
+    name: "business",
+    required: false,
+    description: "Business key to scope the seconds-timeline to (defaults to the first business)",
+  })
+  getAnomalyTrend(@Query("business") business?: string): AnomalyTimePoint[] {
+    return this.analyticsService.getAnomalyTrend(business);
   }
 
   @Get("anomaly-type")
