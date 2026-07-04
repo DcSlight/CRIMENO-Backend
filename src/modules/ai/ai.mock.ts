@@ -5,29 +5,67 @@ export const MOCK_REPLIES: string[] = [
   "I've noted that. Let me know if you'd like me to pull the frame-level VLM description for a specific camera or time range.",
 ];
 
-// Keyword -> reply. Matched against the lowercased question; first match wins.
-// Mirrors the suggestion chips in AiChatWidget's SUGGESTED_QUESTIONS.
-// Answers are grounded in the demo groq/vlm mocks under mocks/{jewelry,gun_store,market}
-// so they read like a real summary of the anomaly-scoring + VLM pipeline output.
-export const KEYWORD_REPLIES: { keywords: string[]; answer: string }[] = [
+export type BusinessKey = "jewelry" | "gun_store" | "market";
+
+export const BUSINESS_KEYS: BusinessKey[] = ["jewelry", "gun_store", "market"];
+
+export const BUSINESS_LABELS: Record<BusinessKey, string> = {
+  jewelry: "Jewelry Store",
+  gun_store: "Gun Store",
+  market: "Market",
+};
+
+// Keyword -> per-business reply. Matched against the lowercased question; first
+// keyword match wins, then one business is picked at random from `answers` so
+// the chat reads like a real per-camera summary instead of a single canned line.
+// Grounded in the demo groq mocks under mocks/{jewelry,gun_store,market}/groq_mock.jsonl
+// (frame numbers converted to mm:ss assuming 30fps).
+export const KEYWORD_REPLIES: {
+  keywords: string[];
+  answers: Record<BusinessKey, string>;
+}[] = [
   {
     keywords: ["behaviour pattern", "behavior pattern"],
-    answer:
-      "Behaviour has shifted from routine to coordinated across three feeds. Jewelry store: calm browsing until 00:22, when a capped subject walked straight to the counter with no browsing (anomaly_score 0.46 → 0.94 by 01:04). Gun store: two masked individuals skip normal shopping behaviour from 00:06 and move toward the counter by 00:12 (face_concealed: yes, aggression: possible). Market: a group loiters near checkout from 00:18 with limited browsing before an armed subject enters at 00:30. All three are now flagged as coordinated/aggressive rather than normal foot traffic.",
+    answers: {
+      jewelry:
+        "Jewelry store: calm browsing until 00:22, then a capped subject walks straight to the counter with no browsing (anomaly_score 0.46 → 0.94 by 01:04, when suspects start forcing open display cases).",
+      gun_store:
+        "Gun store: two masked individuals skip normal shopping behaviour from 00:06 and turn aggressive near the counter by 00:12 (anomaly_score 0.68). By 00:42 one climbs over the counter into the restricted employee area (0.95).",
+      market:
+        "Market: a group loiters near checkout from 00:18 with limited browsing (helmet + heavy jacket noted), before an armed subject takes control of the register at 00:30 (anomaly_score 0.95).",
+    },
   },
   {
     keywords: ["recent alert", "summarize alert", "summarise alert"],
-    answer:
-      "3 feeds escalated to 'criminal' in the last analysis pass: jewelry store (peak anomaly_score 0.95 — suspects reached into display cases and forced them open, handguns visible), gun store (peak 0.98 — two masked suspects broke into the counter, then stole firearms directly off the wall display), and market (peak 0.99 — an armed suspect took control of the register and cash was handed over twice). Each moved from 'normal' to 'criminal' in under 40 seconds of screen time.",
+    answers: {
+      jewelry:
+        "Jewelry store escalated to 'criminal' at 00:38 (anomaly_score 0.88) when a handgun became visible near the seller; peak severity 0.95 at 01:04 as display cases were forced open and jewelry removed.",
+      gun_store:
+        "Gun store escalated to 'criminal' at 00:18 (0.86) when the counter was attacked; peak severity 0.98 at 00:54 as suspects made off with firearms taken directly from the wall display.",
+      market:
+        "Market escalated to 'criminal' at 00:30 (0.95) when an armed suspect took control of the register; peak severity 0.99 as cash was handed over multiple times, including a bag of hidden cash.",
+    },
   },
   {
     keywords: ["suspicious"],
-    answer:
-      "Yes — 2 of 3 monitored feeds are currently above the suspicious threshold. Gun store: two face-concealed individuals are reaching over the counter with aggression flagged (anomaly_score 0.68). Market: a handgun is visible and the cashier has been forced away from the register (anomaly_score 0.95, label: criminal). The jewelry store feed is also in the criminal band — display cases are actively being emptied as of the last frame.",
+    answers: {
+      jewelry:
+        "Yes — the jewelry store feed is currently in the criminal band (anomaly_score 0.95): suspects are actively reaching into display cases while weapons remain visible near the seller.",
+      gun_store:
+        "Yes — the gun store feed has escalated to criminal (anomaly_score 0.98): a masked robber is holding multiple stolen firearms taken off the wall display.",
+      market:
+        "Yes — the market feed shows a handgun visible and the cashier forced away from the register (anomaly_score 0.95, label: criminal).",
+    },
   },
   {
     keywords: ["camera status", "check camera"],
-    answer:
-      "All monitored cameras across the jewelry store, gun store, and market feeds are online and streaming, reporting frames every ~6 seconds to the VLM and anomaly-scoring pipeline. No dropped frames or gaps detected in the current session.",
+    answers: {
+      jewelry:
+        "Jewelry store camera is online and streaming, reporting frames every ~6 seconds with no dropped frames. It's currently tracking an active criminal-labeled event.",
+      gun_store:
+        "Gun store camera is online and streaming with no gaps detected. It's currently tracking an active robbery (anomaly_score 0.97) as stolen firearms are carried toward the exit.",
+      market:
+        "Market camera is online and streaming with no dropped frames. It's currently tracking an active robbery in the checkout area (anomaly_score 0.99).",
+    },
   },
 ];
