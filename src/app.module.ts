@@ -9,6 +9,7 @@ import { GroqModule } from './modules/groq/groq.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { BusinessesModule } from './modules/businesses/businesses.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { AiModule } from './modules/ai/ai.module';
 import {
   databaseConfig,
   getTypeOrmConfig,
@@ -30,6 +31,7 @@ import {
     VideosModule,
     BusinessesModule,
     AnalyticsModule,
+    AiModule,
   ],
 })
 export class AppModule {}
