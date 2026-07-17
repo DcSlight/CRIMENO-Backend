@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, OnModuleDestroy } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { GroqGateway } from '../groq/groq.gateway';
-import { FlorenceGateway } from '../florence/florence.gateway';
+import { VlmGateway } from '../vlm/vlm.gateway';
 
 const MOCK_FPS = 30;
 const START_DELAY_MS = 1000;
@@ -37,7 +37,7 @@ export class DemoReplayService implements OnModuleDestroy {
 
   constructor(
     private readonly groqGateway: GroqGateway,
-    private readonly florenceGateway: FlorenceGateway,
+    private readonly vlmGateway: VlmGateway,
   ) {}
 
   private load(demoKey: string): DemoDataset {
@@ -87,7 +87,7 @@ export class DemoReplayService implements OnModuleDestroy {
     for (const entry of vlmEntries) {
       const delayMs = START_DELAY_MS + (entry.video_time_ms ?? 0);
       const t = setTimeout(() => {
-        this.florenceGateway.broadcast(entry);
+        this.vlmGateway.broadcast(entry);
       }, delayMs);
       this.timers.push(t);
     }

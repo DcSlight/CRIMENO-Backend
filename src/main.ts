@@ -42,7 +42,7 @@ async function bootstrap() {
   }
 
   console.log(`[HTTP] Listening on http://localhost:${port}`);
-  console.log(`[WS]   Florence:  ws://localhost:${port}/ws/florence`);
+  console.log(`[WS]   VLM:       ws://localhost:${port}/ws/vlm`);
   console.log(`[WS]   Tracker:   ws://localhost:${port}/ws/tracker`);
   console.log(`[WS]   Qwen:      ws://localhost:${port}/ws/qwen`);
 }

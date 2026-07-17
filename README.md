@@ -23,7 +23,7 @@ Swagger docs: `http://localhost:3000/api/docs`
 | Path | Direction | Purpose |
 |---|---|---|
 | `ws://localhost:3000/ws/groq` | Model → Client | Groq anomaly results (`groq_anomaly` payloads) |
-| `ws://localhost:3000/ws/florence` | Model → Client | Florence scene captions |
+| `ws://localhost:3000/ws/vlm` | Model → Client | VLM scene captions |
 | `ws://localhost:3000/ws/tracker` | Model → Client | YOLOv8 bounding-box tracks |
 
 The Groq gateway (`src/modules/groq/groq.gateway.ts`) fans out all incoming messages to every connected browser client.
