@@ -60,10 +60,12 @@ export class VideosService {
         throw new BadRequestException(`Video not found: ${fileName}`);
       }
       console.log(videoPath);
+      await this.sleep(1000);
       await this.broadcaster.playVideo(videoPath, "local");
     } else {
       // online video - src is a URL
       console.log(src);
+      await this.sleep(1000);
       await this.broadcaster.playVideo(src, "online");
     }
 
@@ -129,6 +131,10 @@ export class VideosService {
       throw new Error("[ENV] Missing VIDEOS_DIR");
     }
     return videosDir;
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private toNiceLabel(fileName: string): string {
