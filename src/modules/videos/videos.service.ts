@@ -1,11 +1,12 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import * as fs from "fs";
-import * as path from "path";
-import { BroadcasterService } from "../broadcaster/broadcaster.service";
-import { BusinessesService } from "../businesses/businesses.service";
-import { Business } from "../../database/entities";
-import { GroqContextService } from "../groq/groq-context.service";
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as fs from 'fs';
+import * as path from 'path';
+import { BroadcasterService } from '../broadcaster/broadcaster.service';
+import { BusinessesService } from '../businesses/businesses.service';
+import { formatBusinessContext } from '../businesses/business-context.util';
+import { GroqContextService } from '../groq/groq-context.service';
+import { ActiveSelectionStore } from '../selection/active-selection.store';
 
 export type VideoOptionDto = {
   label: string;
@@ -19,14 +20,15 @@ export class VideosService {
     private readonly broadcaster: BroadcasterService,
     private readonly businessesService: BusinessesService,
     private readonly groqContextService: GroqContextService,
+    private readonly activeSelection: ActiveSelectionStore,
   ) {}
 
   private readonly allowedExt = new Set([
-    ".mp4",
-    ".webm",
-    ".ogg",
-    ".mov",
-    ".m4v",
+    '.mp4',
+    '.webm',
+    '.ogg',
+    '.mov',
+    '.m4v',
   ]);
 
   // -----------------------------
@@ -34,17 +36,17 @@ export class VideosService {
   // -----------------------------
   async selectVideo(
     src: string,
-    videoType: "local" | "online",
+    videoType: 'local' | 'online',
     businessId: number,
     includeContext: boolean,
   ) {
-    if (!src || typeof src !== "string") {
-      throw new BadRequestException("src is required");
+    if (!src || typeof src !== 'string') {
+      throw new BadRequestException('src is required');
     }
 
-    if (videoType === "local") {
-      if (!src.startsWith("/videos/")) {
-        throw new BadRequestException("src must start with /videos/");
+    if (videoType === 'local') {
+      if (!src.startsWith('/videos/')) {
+        throw new BadRequestException('src must start with /videos/');
       }
 
       const fileName = path.basename(src);
@@ -61,41 +63,24 @@ export class VideosService {
       }
       console.log(videoPath);
       await this.sleep(1000);
-      await this.broadcaster.playVideo(videoPath, "local");
+      await this.broadcaster.playVideo(videoPath, 'local');
     } else {
       // online video - src is a URL
       console.log(src);
       await this.sleep(1000);
-      await this.broadcaster.playVideo(src, "online");
+      await this.broadcaster.playVideo(src, 'online');
     }
+
+    // Remember which business this video belongs to so the AI chat assistant
+    // can ground its answers without the client having to resend it.
+    this.activeSelection.set({ businessId, src });
 
     if (includeContext) {
-      const business = await this.businessesService.findBusinessById(businessId);
-      const contextText = this.formatBusinessContext(business);
+      const business =
+        await this.businessesService.findBusinessById(businessId);
+      const contextText = formatBusinessContext(business);
       await this.groqContextService.sendBusinessContext(contextText);
     }
-  }
-
-  private formatBusinessContext(business: Business): string {
-    const lines: string[] = [];
-    lines.push(`Store: ${business.store_name} (${business.store_type})`);
-    if (business.description) lines.push(`Description: ${business.description}`);
-    if (business.address || business.city) {
-      lines.push(`Location: ${[business.address, business.city].filter(Boolean).join(", ")}`);
-    }
-    const policy = business.business_policy;
-    if (policy) {
-      lines.push(`Sensitivity: ${policy.sensitivity_level}; scoring: ${policy.scoring_level}; interaction: ${policy.interaction_sensitivity}`);
-      if (policy.allowed_behaviors?.length) lines.push(`Allowed behaviors: ${policy.allowed_behaviors.join(", ")}`);
-      if (policy.forbidden_behaviors?.length) lines.push(`Forbidden behaviors: ${policy.forbidden_behaviors.join(", ")}`);
-    }
-    if (business.cameras?.length) {
-      lines.push(`Surveillance cameras (${business.cameras.length}) — all video frames analyzed are captured from these cameras:`);
-      for (const cam of business.cameras) {
-        lines.push(`  - ${cam.camera_name}: ${cam.location_description}`);
-      }
-    }
-    return lines.join("\n");
   }
 
   // -----------------------------
@@ -112,9 +97,7 @@ export class VideosService {
       .readdirSync(videosDir, { withFileTypes: true })
       .filter((d) => d.isFile())
       .map((d) => d.name)
-      .filter((name) =>
-        this.allowedExt.has(path.extname(name).toLowerCase()),
-      )
+      .filter((name) => this.allowedExt.has(path.extname(name).toLowerCase()))
       .sort((a, b) => a.localeCompare(b))
       .map((fileName) => ({
         label: this.toNiceLabel(fileName),
@@ -126,9 +109,9 @@ export class VideosService {
   // Helpers
   // -----------------------------
   private getVideosDirFromEnv(): string {
-    const videosDir = this.config.get<string>("VIDEOS_DIR");
+    const videosDir = this.config.get<string>('VIDEOS_DIR');
     if (!videosDir) {
-      throw new Error("[ENV] Missing VIDEOS_DIR");
+      throw new Error('[ENV] Missing VIDEOS_DIR');
     }
     return videosDir;
   }
@@ -138,11 +121,11 @@ export class VideosService {
   }
 
   private toNiceLabel(fileName: string): string {
-    const base = fileName.replace(path.extname(fileName), "");
-    const spaced = base.replace(/[_-]+/g, " ").trim();
+    const base = fileName.replace(path.extname(fileName), '');
+    const spaced = base.replace(/[_-]+/g, ' ').trim();
     return spaced
       .split(/\s+/)
       .map((w) => w[0].toUpperCase() + w.slice(1))
-      .join(" ");
+      .join(' ');
   }
 }
