@@ -18,6 +18,60 @@ Swagger docs: `http://localhost:3000/api/docs`
 | `DB_USER` `DB_PASSWORD` `DB_HOST` `DB_PORT` `DB_NAME` | PostgreSQL connection |
 | `VIDEOS_DIR` | Absolute path to the folder containing `.mp4` video files |
 
+## Database Schema
+
+PostgreSQL via TypeORM (`src/database/entities`). `businesses` is the root aggregate — `business_hours` and `cameras` are one-to-many children, `business_policies` is one-to-one, and `detection_results` stores per-business ML output. All child tables cascade on delete from `businesses`.
+
+```mermaid
+erDiagram
+    businesses ||--o{ business_hours : has
+    businesses ||--o{ cameras : has
+    businesses ||--o| business_policies : has
+    businesses ||--o{ detection_results : has
+
+    businesses {
+        int id PK
+        string store_name
+        string store_type
+        text description
+        string city
+        string address
+    }
+
+    business_hours {
+        int id PK
+        int business_id FK
+        string day_of_week
+        time opening_time
+        time closing_time
+    }
+
+    cameras {
+        int id PK
+        int business_id FK
+        string camera_name
+        text location_description
+    }
+
+    business_policies {
+        int id PK
+        int business_id FK "unique"
+        enum sensitivity_level "low, medium, high"
+        enum scoring_level "conservative, balanced, aggressive"
+        enum interaction_sensitivity "low, medium, high"
+        text_array allowed_behaviors
+        text_array forbidden_behaviors
+    }
+
+    detection_results {
+        int id PK
+        int business_id FK
+        json florence_output
+        json qwen_output
+        timestamp created_at
+    }
+```
+
 ## WebSocket Endpoints
 
 | Path | Direction | Purpose |
