@@ -19,7 +19,7 @@ This skill covers:
 This skill does not cover:
 
 - WebSocket broadcast flows
-- Florence/Qwen/tracker modules
+- VLM/Qwen/tracker modules
 - Non-business modules
 
 ## ERD (Source of Truth)
